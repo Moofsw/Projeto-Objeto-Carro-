@@ -1,21 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Meu Carro</title>
-    <link rel="stylesheet" href="style.css">
+  <title>Herança em JavaScript</title>
 </head>
 <body>
-    <h1>Meu Carro</h1>
+  <h1>Herança em JavaScript</h1>
 
-    <img id="carro-imagem" src="Imagens/carro-imagem.webp" alt="Imagem do Carro">
+  <h2>Carro Esportivo</h2>
+  <label for="modeloEsportivo">Modelo:</label>
+  <input type="text" id="modeloEsportivo" value="Ferrari"><br><br>
 
-    <p>Velocidade: <span id="velocidade">0</span> km/h</p>
-    <p>Status: <span id="status">Desligado</span></p>
+  <label for="corEsportivo">Cor:</label>
+  <input type="text" id="corEsportivo" value="Vermelha"><br><br>
 
-    <button id="ligar">Ligar</button>
-    <button id="desligar">Desligar</button>
-    <button id="acelerar">Acelerar</button>
+  <button onclick="criarCarroEsportivo()">Criar Carro Esportivo</button><br><br>
 
-    <script src="script.js"></script>
+  <button onclick="ligarCarroEsportivo()">Ligar</button>
+  <button onclick="desligarCarroEsportivo()">Desligar</button>
+  <button onclick="acelerarCarroEsportivo()">Acelerar</button>
+  <button onclick="frearCarroEsportivo()">Frear</button>
+  <button onclick="ativarTurbo()">Ativar Turbo</button>
+  <button onclick="desativarTurbo()">Desativar Turbo</button>
+  <p id="statusCarroEsportivo"></p>
+
+  <h2>Caminhão</h2>
+  <label for="modeloCaminhao">Modelo:</label>
+  <input type="text" id="modeloCaminhao" value="Scania"><br><br>
+
+  <label for="corCaminhao">Cor:</label>
+  <input type="text" id="corCaminhao" value="Azul"><br><br>
+
+  <label for="capacidadeCaminhao">Capacidade de Carga:</label>
+  <input type="number" id="capacidadeCaminhao" value="10000"><br><br>
+
+  <button onclick="criarCaminhao()">Criar Caminhão</button><br><br>
+
+  <button onclick="ligarCaminhao()">Ligar</button>
+  <button onclick="desligarCaminhao()">Desligar</button>
+  <button onclick="acelerarCaminhao()">Acelerar</button>
+  <button onclick="frearCaminhao()">Frear</button>
+  <button onclick="carregarCaminhao()">Carregar</button>
+  <button onclick="descarregarCaminhao()">Descarregar</button>
+  <input type="number" id="quantidadeCarga" value="1000"><br><br>
+  <p id="statusCaminhao"></p>
+
+  <link rel="stylesheet" href="style.css">
+
+  <script src="script.js"></script>
 </body>
 </html>

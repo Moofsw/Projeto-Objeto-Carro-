@@ -1,29 +1,35 @@
-#carro-imagem {
-    width: 300px; /* Ajuste o tamanho conforme necessário */
-    display: block;
-    margin: 20px auto;
-}
-
-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    margin: 5px;
-}
-
-#velocidade {
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+  }
+  
+  label {
+    display: inline-block;
+    width: 150px;
+    text-align: right;
+    margin-right: 10px;
+  }
+  
+  input[type="text"], input[type="number"] {
+    width: 200px;
+    padding: 5px;
+    margin-bottom: 10px;
+  }
+  
+  button {
+    padding: 8px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-right: 5px;
+  }
+  
+  button:hover {
+    background-color: #3e8e41;
+  }
+  
+  #statusCarroEsportivo, #statusCaminhao {
+    margin-top: 10px;
     font-weight: bold;
-}
-
-#status {
-    font-weight: bold;
-}
-
-/* Estilo para quando o carro está ligado */
-#status.ligado {
-    color: green;
-}
-
-/* Estilo para quando o carro está desligado */
-#status.desligado {
-    color: red;
-}
+  }
