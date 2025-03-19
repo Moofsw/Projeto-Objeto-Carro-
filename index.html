@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Herança em JavaScript</title>
+  <title>Herança e Polimorfismo em JavaScript</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Herança em JavaScript</h1>
+  <h1>Herança e Polimorfismo em JavaScript</h1>
 
   <h2>Carro Esportivo</h2>
   <label for="modeloEsportivo">Modelo:</label>
@@ -41,10 +42,21 @@
   <button onclick="frearCaminhao()">Frear</button>
   <button onclick="carregarCaminhao()">Carregar</button>
   <button onclick="descarregarCaminhao()">Descarregar</button>
+  <label for="quantidadeCarga">Quantidade de Carga:</label>
   <input type="number" id="quantidadeCarga" value="1000"><br><br>
   <p id="statusCaminhao"></p>
 
-  <link rel="stylesheet" href="style.css">
+  <h2>Exibir Informações (Polimorfismo)</h2>
+  <button onclick="exibirInfoCarro()">Exibir Info Carro</button>
+  <button onclick="exibirInfoCarroEsportivo()">Exibir Info Carro Esportivo</button>
+  <button onclick="exibirInfoCaminhao()">Exibir Info Caminhão</button>
+  <div id="informacoesVeiculo"></div>
+
+  <h2>Garagem Inteligente (Interação Polimórfica)</h2>
+  <button onclick="interagirComCarro()">Interagir com Carro</button>
+  <button onclick="interagirComCarroEsportivo()">Interagir com Carro Esportivo</button>
+  <button onclick="interagirComCaminhao()">Interagir com Caminhão</button>
+  <div id="interacaoVeiculo"></div>
 
   <script src="script.js"></script>
 </body>

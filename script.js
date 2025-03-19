@@ -1,221 +1,317 @@
-// Definição da Classe Carro
-class Carro {
-    constructor(modelo, cor) {
-      this.modelo = modelo;
-      this.cor = cor;
-      this.ligado = false;
-      this.velocidade = 0;
-    }
-  
-    ligar() {
-      this.ligado = true;
-      console.log("Carro ligado!");
-    }
-  
-    desligar() {
-      this.ligado = false;
-      this.velocidade = 0;
-      console.log("Carro desligado!");
-    }
-  
-    acelerar(incremento) {
-      if (this.ligado) {
-        this.velocidade += incremento;
-        console.log(`Acelerando para ${this.velocidade} km/h`);
-      } else {
-        console.log("O carro precisa estar ligado para acelerar!");
-      }
-    }
-  
-    frear(decremento) {
-      if (this.velocidade > 0) {
-        this.velocidade -= decremento;
-        console.log(`Freando para ${this.velocidade} km/h`);
-      } else {
-        console.log("O carro já está parado!");
-      }
-    }
-  
-    exibirStatus() {
-      return `Modelo: ${this.modelo}, Cor: ${this.cor}, Ligado: ${this.ligado}, Velocidade: ${this.velocidade} km/h`;
+// Classe Veiculo
+class Veiculo {
+  constructor(modelo, cor) {
+    this.modelo = modelo;
+    this.cor = cor;
+    this.ligado = false;
+    this.velocidade = 0;
+  }
+
+  ligar() {
+    this.ligado = true;
+    return `${this.modelo} ligado.`;
+  }
+
+  desligar() {
+    this.ligado = false;
+    this.velocidade = 0;
+    return `${this.modelo} desligado.`;
+  }
+
+  acelerar(incremento) {
+    if (this.ligado) {
+      this.velocidade += incremento;
+      return `${this.modelo} acelerou para ${this.velocidade} km/h.`;
+    } else {
+      return `${this.modelo} precisa estar ligado para acelerar.`;
     }
   }
 
-  class CarroEsportivo extends Carro {
-    constructor(modelo, cor) {
-      super(modelo, cor); // Chama o construtor da classe pai (Carro)
-      this.turboAtivado = false;
-    }
-  
-    ativarTurbo() {
-      if (this.ligado) {
-        this.turboAtivado = true;
-        this.velocidade += 50; // Aumenta a velocidade com o turbo
-        console.log("Turbo ativado! Acelerando!");
-      } else {
-        console.log("O carro precisa estar ligado para ativar o turbo!");
-      }
-    }
-  
-    desativarTurbo() {
-        this.turboAtivado = false;
-        console.log("Turbo desativado!");
-    }
-  
-    exibirStatus() {
-      return super.exibirStatus() + `, Turbo: ${this.turboAtivado ? 'Ativado' : 'Desativado'}`;
-    }
+  frear(decremento) {
+    this.velocidade = Math.max(0, this.velocidade - decremento);
+    return `${this.modelo} freou para ${this.velocidade} km/h.`;
   }
 
-  class Caminhao extends Carro {
-    constructor(modelo, cor, capacidadeCarga) {
-      super(modelo, cor);
-      this.capacidadeCarga = capacidadeCarga;
-      this.cargaAtual = 0;
-    }
-  
-    carregar(quantidade) {
-      if (this.cargaAtual + quantidade <= this.capacidadeCarga) {
-        this.cargaAtual += quantidade;
-        console.log(`Caminhão carregado com ${quantidade} kg. Carga atual: ${this.cargaAtual} kg`);
-      } else {
-        console.log("Capacidade máxima excedida!");
-      }
-    }
-  
-    descarregar(quantidade) {
-      if (this.cargaAtual - quantidade >= 0) {
-        this.cargaAtual -= quantidade;
-        console.log(`Caminhão descarregado com ${quantidade} kg. Carga atual: ${this.cargaAtual} kg`);
-      } else {
-        console.log("Não é possível descarregar mais do que a carga atual.");
-      }
-    }
-  
-    exibirStatus() {
-      return super.exibirStatus() + `, Carga: ${this.cargaAtual} kg / ${this.capacidadeCarga} kg`;
-    }
+  exibirInformacoes() {
+    return `Modelo: ${this.modelo}, Cor: ${this.cor}, Ligado: ${this.ligado ? 'Sim' : 'Não'}, Velocidade: ${this.velocidade} km/h`;
   }
 
-  // Variáveis globais para armazenar os objetos
-let carroEsportivo;
-let caminhao;
-
-// Funções para o Carro Esportivo
-function criarCarroEsportivo() {
-  const modelo = document.getElementById("modeloEsportivo").value;
-  const cor = document.getElementById("corEsportivo").value;
-  carroEsportivo = new CarroEsportivo(modelo, cor);
-  atualizarStatusCarroEsportivo();
+  interagir() {
+    return `Interagindo com um veículo genérico.`;
+  }
 }
 
+// Classe Carro (Herda de Veiculo)
+class Carro extends Veiculo {
+  constructor(modelo, cor, numeroPortas) {
+    super(modelo, cor);
+    this.numeroPortas = numeroPortas;
+  }
+
+  exibirInformacoes() {
+    return `${super.exibirInformacoes()}, Número de Portas: ${this.numeroPortas}`;
+  }
+
+  interagir() {
+    return `Interagindo com um carro: ${this.modelo}.`;
+  }
+}
+
+
+// Classe CarroEsportivo (Herda de Carro)
+class CarroEsportivo extends Carro {
+  constructor(modelo, cor) {
+    super(modelo, cor, 2); // Carros esportivos tipicamente têm 2 portas
+    this.turboAtivado = false;
+  }
+
+  ativarTurbo() {
+    this.turboAtivado = true;
+    return 'Turbo ativado!';
+  }
+
+  desativarTurbo() {
+    this.turboAtivado = false;
+    return 'Turbo desativado.';
+  }
+
+  exibirInformacoes() {
+    return `${super.exibirInformacoes()}, Turbo: ${this.turboAtivado ? 'Ativado' : 'Desativado'}`;
+  }
+
+  interagir() {
+    return `Interagindo com um carro esportivo: ${this.modelo} com turbo ${this.turboAtivado ? 'ativado' : 'desativado'}.`;
+  }
+}
+
+// Classe Caminhao (Herda de Veiculo)
+class Caminhao extends Veiculo {
+  constructor(modelo, cor, capacidadeCarga) {
+    super(modelo, cor);
+    this.capacidadeCarga = capacidadeCarga;
+    this.cargaAtual = 0;
+  }
+
+  carregar(quantidade) {
+    if (this.cargaAtual + quantidade <= this.capacidadeCarga) {
+      this.cargaAtual += quantidade;
+      return `Caminhão carregado. Carga atual: ${this.cargaAtual} kg.`;
+    } else {
+      return `Capacidade máxima excedida. Carga atual: ${this.cargaAtual} kg, Capacidade máxima: ${this.capacidadeCarga} kg.`;
+    }
+  }
+
+  descarregar(quantidade) {
+    this.cargaAtual = Math.max(0, this.cargaAtual - quantidade);
+    return `Caminhão descarregado. Carga atual: ${this.cargaAtual} kg.`;
+  }
+
+  exibirInformacoes() {
+    return `${super.exibirInformacoes()}, Capacidade de Carga: ${this.capacidadeCarga} kg, Carga Atual: ${this.cargaAtual} kg`;
+  }
+
+  interagir() {
+    return `Interagindo com um caminhão: ${this.modelo} com carga atual de ${this.cargaAtual} kg.`;
+  }
+}
+
+// Variáveis globais para armazenar os objetos criados
+let meuCarro;
+let meuCarroEsportivo;
+let meuCaminhao;
+
+// Funções para criar os objetos
+function criarCarroEsportivo() {
+  const modelo = document.getElementById('modeloEsportivo').value;
+  const cor = document.getElementById('corEsportivo').value;
+  meuCarroEsportivo = new CarroEsportivo(modelo, cor);
+  document.getElementById('statusCarroEsportivo').textContent = `Carro Esportivo ${modelo} criado!`;
+}
+
+function criarCaminhao() {
+  const modelo = document.getElementById('modeloCaminhao').value;
+  const cor = document.getElementById('corCaminhao').value;
+  const capacidadeCarga = parseFloat(document.getElementById('capacidadeCaminhao').value);
+  meuCaminhao = new Caminhao(modelo, cor, capacidadeCarga);
+  document.getElementById('statusCaminhao').textContent = `Caminhão ${modelo} criado!`;
+}
+
+// Funções para interagir com o Carro Esportivo
 function ligarCarroEsportivo() {
-  if (carroEsportivo) {
-    carroEsportivo.ligar();
-    atualizarStatusCarroEsportivo();
+  if (meuCarroEsportivo) {
+    document.getElementById('statusCarroEsportivo').textContent = meuCarroEsportivo.ligar();
+  } else {
+    document.getElementById('statusCarroEsportivo').textContent = 'Crie o carro esportivo primeiro!';
   }
 }
 
 function desligarCarroEsportivo() {
-  if (carroEsportivo) {
-    carroEsportivo.desligar();
-    atualizarStatusCarroEsportivo();
+  if (meuCarroEsportivo) {
+    document.getElementById('statusCarroEsportivo').textContent = meuCarroEsportivo.desligar();
+  } else {
+    document.getElementById('statusCarroEsportivo').textContent = 'Crie o carro esportivo primeiro!';
   }
 }
 
 function acelerarCarroEsportivo() {
-  if (carroEsportivo) {
-    carroEsportivo.acelerar(10); // Incremento de 10 km/h
-    atualizarStatusCarroEsportivo();
+  if (meuCarroEsportivo) {
+    document.getElementById('statusCarroEsportivo').textContent = meuCarroEsportivo.acelerar(10);
+  } else {
+    document.getElementById('statusCarroEsportivo').textContent = 'Crie o carro esportivo primeiro!';
   }
 }
 
 function frearCarroEsportivo() {
-  if (carroEsportivo) {
-    carroEsportivo.frear(5); // Decremento de 5 km/h
-    atualizarStatusCarroEsportivo();
+  if (meuCarroEsportivo) {
+    document.getElementById('statusCarroEsportivo').textContent = meuCarroEsportivo.frear(5);
+  } else {
+    document.getElementById('statusCarroEsportivo').textContent = 'Crie o carro esportivo primeiro!';
   }
 }
 
 function ativarTurbo() {
-  if (carroEsportivo) {
-    carroEsportivo.ativarTurbo();
-    atualizarStatusCarroEsportivo();
+  if (meuCarroEsportivo) {
+    document.getElementById('statusCarroEsportivo').textContent = meuCarroEsportivo.ativarTurbo();
+  } else {
+    document.getElementById('statusCarroEsportivo').textContent = 'Crie o carro esportivo primeiro!';
   }
 }
 
 function desativarTurbo() {
-  if (carroEsportivo) {
-    carroEsportivo.desativarTurbo();
-    atualizarStatusCarroEsportivo();
-  }
-}
-
-function atualizarStatusCarroEsportivo() {
-  if (carroEsportivo) {
-    document.getElementById("statusCarroEsportivo").textContent = carroEsportivo.exibirStatus();
+  if (meuCarroEsportivo) {
+    document.getElementById('statusCarroEsportivo').textContent = meuCarroEsportivo.desativarTurbo();
   } else {
-    document.getElementById("statusCarroEsportivo").textContent = "Nenhum carro esportivo criado.";
+    document.getElementById('statusCarroEsportivo').textContent = 'Crie o carro esportivo primeiro!';
   }
 }
 
-// Funções para o Caminhão
-function criarCaminhao() {
-  const modelo = document.getElementById("modeloCaminhao").value;
-  const cor = document.getElementById("corCaminhao").value;
-  const capacidadeCarga = parseInt(document.getElementById("capacidadeCaminhao").value);
-  caminhao = new Caminhao(modelo, cor, capacidadeCarga);
-  atualizarStatusCaminhao();
-}
-
+// Funções para interagir com o Caminhão
 function ligarCaminhao() {
-  if (caminhao) {
-    caminhao.ligar();
-    atualizarStatusCaminhao();
+  if (meuCaminhao) {
+    document.getElementById('statusCaminhao').textContent = meuCaminhao.ligar();
+  } else {
+    document.getElementById('statusCaminhao').textContent = 'Crie o caminhão primeiro!';
   }
 }
 
 function desligarCaminhao() {
-  if (caminhao) {
-    caminhao.desligar();
-    atualizarStatusCaminhao();
+  if (meuCaminhao) {
+    document.getElementById('statusCaminhao').textContent = meuCaminhao.desligar();
+  } else {
+    document.getElementById('statusCaminhao').textContent = 'Crie o caminhão primeiro!';
   }
 }
 
 function acelerarCaminhao() {
-  if (caminhao) {
-    caminhao.acelerar(5); // Incremento de 5 km/h
-    atualizarStatusCaminhao();
+  if (meuCaminhao) {
+    document.getElementById('statusCaminhao').textContent = meuCaminhao.acelerar(5);
+  } else {
+    document.getElementById('statusCaminhao').textContent = 'Crie o caminhão primeiro!';
   }
 }
 
 function frearCaminhao() {
-  if (caminhao) {
-    caminhao.frear(2); // Decremento de 2 km/h
-    atualizarStatusCaminhao();
+  if (meuCaminhao) {
+    document.getElementById('statusCaminhao').textContent = meuCaminhao.frear(2);
+  } else {
+    document.getElementById('statusCaminhao').textContent = 'Crie o caminhão primeiro!';
   }
 }
 
 function carregarCaminhao() {
-  if (caminhao) {
-    const quantidade = parseInt(document.getElementById("quantidadeCarga").value);
-    caminhao.carregar(quantidade);
-    atualizarStatusCaminhao();
+  if (meuCaminhao) {
+    const quantidade = parseFloat(document.getElementById('quantidadeCarga').value);
+    document.getElementById('statusCaminhao').textContent = meuCaminhao.carregar(quantidade);
+  } else {
+    document.getElementById('statusCaminhao').textContent = 'Crie o caminhão primeiro!';
   }
 }
 
 function descarregarCaminhao() {
-  if (caminhao) {
-    const quantidade = parseInt(document.getElementById("quantidadeCarga").value);
-    caminhao.descarregar(quantidade);
-    atualizarStatusCaminhao();
+  if (meuCaminhao) {
+    const quantidade = parseFloat(document.getElementById('quantidadeCarga').value);
+    document.getElementById('statusCaminhao').textContent = meuCaminhao.descarregar(quantidade);
+  } else {
+    document.getElementById('statusCaminhao').textContent = 'Crie o caminhão primeiro!';
   }
 }
 
-function atualizarStatusCaminhao() {
-  if (caminhao) {
-    document.getElementById("statusCaminhao").textContent = caminhao.exibirStatus();
+// Funções para exibir informações (Polimorfismo)
+function exibirInfoCarro() {
+    if (meuCarro) {
+        document.getElementById('informacoesVeiculo').textContent = meuCarro.exibirInformacoes();
+    } else {
+        document.getElementById('informacoesVeiculo').textContent = "Crie um carro primeiro (não implementado no HTML).";
+    }
+}
+
+function exibirInfoCarroEsportivo() {
+  if (meuCarroEsportivo) {
+    document.getElementById('informacoesVeiculo').textContent = meuCarroEsportivo.exibirInformacoes();
   } else {
-    document.getElementById("statusCaminhao").textContent = "Nenhum caminhão criado.";
+    document.getElementById('informacoesVeiculo').textContent = 'Crie o carro esportivo primeiro!';
   }
+}
+
+function exibirInfoCaminhao() {
+  if (meuCaminhao) {
+    document.getElementById('informacoesVeiculo').textContent = meuCaminhao.exibirInformacoes();
+  } else {
+    document.getElementById('informacoesVeiculo').textContent = 'Crie o caminhão primeiro!';
+  }
+}
+
+// Funções para interação polimórfica (Garagem Inteligente)
+function interagirComCarro() {
+    if (meuCarro) {
+        document.getElementById('interacaoVeiculo').textContent = meuCarro.interagir();
+    } else {
+        document.getElementById('interacaoVeiculo').textContent = "Crie um carro primeiro (não implementado no HTML).";
+    }
+}
+
+
+function interagirComCarroEsportivo() {
+  if (meuCarroEsportivo) {
+    document.getElementById('interacaoVeiculo').textContent = meuCarroEsportivo.interagir();
+  } else {
+    document.getElementById('interacaoVeiculo').textContent = 'Crie o carro esportivo primeiro!';
+  }
+}
+
+function interagirComCaminhao() {
+  if (meuCaminhao) {
+    document.getElementById('interacaoVeiculo').textContent = meuCaminhao.interagir();
+  } else {
+    document.getElementById('interacaoVeiculo').textContent = 'Crie o caminhão primeiro!';
+  }
+}
+
+function criarCarroEsportivo() {
+  const modelo = document.getElementById('modeloEsportivo').value;
+  const cor = document.getElementById('corEsportivo').value;
+  meuCarroEsportivo = new CarroEsportivo(modelo, cor);
+  document.getElementById('statusCarroEsportivo').textContent = `Carro Esportivo ${modelo} criado!`;
+
+  // Atualiza a imagem do Carro Esportivo
+  const imagemCarroEsportivo = document.getElementById('carro-imagem.webp');
+  imagemCarroEsportivo.src = `images/${modelo.toLowerCase().replace(' ', '_')}.jpg`; // Ajuste o nome do arquivo conforme necessário
+  imagemCarroEsportivo.onerror = function() {  // Caso a imagem não seja encontrada
+    imagemCarroEsportivo.src = 'images/placeholder.jpg'; // Use uma imagem placeholder
+  };
+}
+
+function criarCaminhao() {
+  const modelo = document.getElementById('modeloCaminhao').value;
+  const cor = document.getElementById('corCaminhao').value;
+  const capacidadeCarga = parseFloat(document.getElementById('capacidadeCaminhao').value);
+  meuCaminhao = new Caminhao(modelo, cor, capacidadeCarga);
+  document.getElementById('statusCaminhao').textContent = `Caminhão ${modelo} criado!`;
+
+  // Atualiza a imagem do Caminhão
+  const imagemCaminhao = document.getElementById('imagemCaminhao');
+  imagemCaminhao.src = `images/${modelo.toLowerCase().replace(' ', '_')}.jpg`; // Ajuste o nome do arquivo conforme necessário
+  imagemCaminhao.onerror = function() {  // Caso a imagem não seja encontrada
+    imagemCaminhao.src = 'images/placeholder.jpg'; // Use uma imagem placeholder
+  };
 }
