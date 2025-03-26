@@ -1,10 +1,49 @@
 body {
   font-family: Arial, sans-serif;
-  margin: 20px;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+.container {
+  width: 80%;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 h1, h2 {
   color: #333;
+  text-align: center;
+}
+
+section {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.veiculo-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.veiculo-container img {
+  max-width: 300px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.form-group {
+  margin-bottom: 10px;
+  text-align: center; /* Center the form elements */
 }
 
 label {
@@ -17,17 +56,27 @@ label {
 input[type="text"],
 input[type="number"] {
   width: 200px;
-  padding: 5px;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box; /*  Ensures padding and border are included in the element's total width and height. */
+}
+
+.button-group {
+  text-align: center;
   margin-bottom: 10px;
 }
 
 button {
-  padding: 8px 15px;
+  padding: 10px 15px;
   background-color: #4CAF50;
   color: white;
   border: none;
   cursor: pointer;
-  margin-right: 5px;
+  border-radius: 4px;
+  margin: 5px;
+  transition: background-color 0.3s;
 }
 
 button:hover {
@@ -42,4 +91,13 @@ button:hover {
   padding: 10px;
   border: 1px solid #ccc;
   background-color: #f9f9f9;
+  border-radius: 4px;
+  text-align: center;
+}
+
+#feedbackVisualCarroEsportivo,
+#feedbackVisualCaminhao {
+  margin-top: 10px;
+  padding: 5px;
+  text-align: center;
 }

@@ -1,63 +1,96 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Herança e Polimorfismo em JavaScript</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garagem Inteligente</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Herança e Polimorfismo em JavaScript</h1>
+    <div class="container">
+        <h1>Garagem Inteligente</h1>
 
-  <h2>Carro Esportivo</h2>
-  <label for="modeloEsportivo">Modelo:</label>
-  <input type="text" id="modeloEsportivo" value="Ferrari"><br><br>
+        <section id="carro-esportivo">
+            <h2>Carro Esportivo</h2>
+            <div class="veiculo-container">
+                <img id="imagemCarroEsportivo" src="Imagens/carro-imagem.webp" alt="Carro Esportivo">
+                <div class="form-group">
+                    <label for="modeloEsportivo">Modelo:</label>
+                    <input type="text" id="modeloEsportivo" value="Ferrari">
+                </div>
+                <div class="form-group">
+                    <label for="corEsportivo">Cor:</label>
+                    <input type="text" id="corEsportivo" value="Vermelha">
+                </div>
+                <button id="criarCarroEsportivoBtn">Criar Carro Esportivo</button>
+                <div class="button-group">
+                    <button id="ligarCarroEsportivoBtn">Ligar</button>
+                    <button id="desligarCarroEsportivoBtn">Desligar</button>
+                    <button id="acelerarCarroEsportivoBtn">Acelerar</button>
+                    <button id="frearCarroEsportivoBtn">Frear</button>
+                    <button id="ativarTurboBtn">Ativar Turbo</button>
+                    <button id="desativarTurboBtn">Desativar Turbo</button>
+                </div>
+                <p id="statusCarroEsportivo"></p>
+                <div id="feedbackVisualCarroEsportivo"></div>
+            </div>
+        </section>
 
-  <label for="corEsportivo">Cor:</label>
-  <input type="text" id="corEsportivo" value="Vermelha"><br><br>
+        <section id="caminhao">
+            <h2>Caminhão</h2>
+            <div class="veiculo-container">
+                <img id="imagemCaminhao" src="Imagens/pngtree-red-truck-transport-png-image_11506094.png" alt="Caminhão">
+                <div class="form-group">
+                    <label for="modeloCaminhao">Modelo:</label>
+                    <input type="text" id="modeloCaminhao" value="Scania">
+                </div>
+                <div class="form-group">
+                    <label for="corCaminhao">Cor:</label>
+                    <input type="text" id="corCaminhao" value="Azul">
+                </div>
+                <div class="form-group">
+                    <label for="capacidadeCaminhao">Capacidade de Carga:</label>
+                    <input type="number" id="capacidadeCaminhao" value="10000">
+                </div>
+                <button id="criarCaminhaoBtn">Criar Caminhão</button>
+                <div class="button-group">
+                    <button id="ligarCaminhaoBtn">Ligar</button>
+                    <button id="desligarCaminhaoBtn">Desligar</button>
+                    <button id="acelerarCaminhaoBtn">Acelerar</button>
+                    <button id="frearCaminhaoBtn">Frear</button>
+                    <button id="carregarCaminhaoBtn">Carregar</button>
+                    <button id="descarregarCaminhaoBtn">Descarregar</button>
+                </div>
+                <div class="form-group">
+                    <label for="quantidadeCarga">Quantidade de Carga:</label>
+                    <input type="number" id="quantidadeCarga" value="1000">
+                </div>
+                <p id="statusCaminhao"></p>
+                <div id="feedbackVisualCaminhao"></div>
+            </div>
+        </section>
 
-  <button onclick="criarCarroEsportivo()">Criar Carro Esportivo</button><br><br>
+        <section id="informacoes">
+            <h2>Informações e Interação</h2>
+            <div class="button-group">
+                <button id="exibirInfoCarroEsportivoBtn">Exibir Info Carro Esportivo</button>
+                <button id="exibirInfoCaminhaoBtn">Exibir Info Caminhão</button>
+            </div>
+            <div id="informacoesVeiculo"></div>
+            <div class="button-group">
+                <button id="interagirComCarroEsportivoBtn">Interagir com Carro Esportivo</button>
+                <button id="interagirComCaminhaoBtn">Interagir com Caminhão</button>
+            </div>
+            <div id="interacaoVeiculo"></div>
+        </section>
 
-  <button onclick="ligarCarroEsportivo()">Ligar</button>
-  <button onclick="desligarCarroEsportivo()">Desligar</button>
-  <button onclick="acelerarCarroEsportivo()">Acelerar</button>
-  <button onclick="frearCarroEsportivo()">Frear</button>
-  <button onclick="ativarTurbo()">Ativar Turbo</button>
-  <button onclick="desativarTurbo()">Desativar Turbo</button>
-  <p id="statusCarroEsportivo"></p>
+        <audio id="somBuzina" src=""></audio>
+        <audio id="somAcelerar" src="Car Accelerating - Sound Effect.mp3"></audio>
+        <audio id="somFrear" src="youtube_btoE9XbX9Mo_audio.mp3"></audio> 
+        <audio id="somLigar" src="youtube_yXjhZfinVVA_audio.mp3"></audio>
+        <audio id="somDesligar" src="sons/desligar.mp3"></audio>
+    </div>
 
-  <h2>Caminhão</h2>
-  <label for="modeloCaminhao">Modelo:</label>
-  <input type="text" id="modeloCaminhao" value="Scania"><br><br>
-
-  <label for="corCaminhao">Cor:</label>
-  <input type="text" id="corCaminhao" value="Azul"><br><br>
-
-  <label for="capacidadeCaminhao">Capacidade de Carga:</label>
-  <input type="number" id="capacidadeCaminhao" value="10000"><br><br>
-
-  <button onclick="criarCaminhao()">Criar Caminhão</button><br><br>
-
-  <button onclick="ligarCaminhao()">Ligar</button>
-  <button onclick="desligarCaminhao()">Desligar</button>
-  <button onclick="acelerarCaminhao()">Acelerar</button>
-  <button onclick="frearCaminhao()">Frear</button>
-  <button onclick="carregarCaminhao()">Carregar</button>
-  <button onclick="descarregarCaminhao()">Descarregar</button>
-  <label for="quantidadeCarga">Quantidade de Carga:</label>
-  <input type="number" id="quantidadeCarga" value="1000"><br><br>
-  <p id="statusCaminhao"></p>
-
-  <h2>Exibir Informações (Polimorfismo)</h2>
-  <button onclick="exibirInfoCarro()">Exibir Info Carro</button>
-  <button onclick="exibirInfoCarroEsportivo()">Exibir Info Carro Esportivo</button>
-  <button onclick="exibirInfoCaminhao()">Exibir Info Caminhão</button>
-  <div id="informacoesVeiculo"></div>
-
-  <h2>Garagem Inteligente (Interação Polimórfica)</h2>
-  <button onclick="interagirComCarro()">Interagir com Carro</button>
-  <button onclick="interagirComCarroEsportivo()">Interagir com Carro Esportivo</button>
-  <button onclick="interagirComCaminhao()">Interagir com Caminhão</button>
-  <div id="interacaoVeiculo"></div>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
