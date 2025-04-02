@@ -1,103 +1,605 @@
+/* style.css - v3 Enhanced Visuals */
+
+/* --- CSS Variables (Theme Colors & Settings) --- */
+:root {
+  --primary-color: #007bff;       /* Blue */
+  --primary-darker: #0056b3;
+  --secondary-color: #6c757d;     /* Gray */
+  --secondary-darker: #5a6268;
+  --success-color: #28a745;       /* Green */
+  --success-darker: #218838;
+  --danger-color: #dc3545;        /* Red */
+  --danger-darker: #c82333;
+  --warning-color: #ffc107;       /* Yellow */
+  --warning-darker: #e0a800;
+  --info-color: #17a2b8;          /* Teal */
+  --info-darker: #138496;
+  --light-color: #f8f9fa;         /* Light Gray BG */
+  --light-border: #dee2e6;
+  --dark-color: #343a40;          /* Dark Text */
+  --text-muted: #6c757d;
+  --body-bg: #eef2f7;             /* Slightly Blue-Gray Body BG */
+  --white-color: #ffffff;
+  --card-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  --card-hover-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  --border-radius-base: 8px;
+  --border-radius-lg: 12px;
+  --font-family-base: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --transition-base: all 0.25s ease-in-out;
+}
+
+/* --- Base & Reset --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial, sans-serif;
+  font-family: var(--font-family-base);
   margin: 0;
   padding: 0;
-  background-color: #f4f4f4;
-  color: #333;
+  background-color: var(--body-bg);
+  color: var(--dark-color);
+  line-height: 1.65; /* Slightly more line height */
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased; /* Smoother fonts */
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* --- Container & Layout --- */
 .container {
-  width: 80%;
-  margin: 20px auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 95%;
+  max-width: 1500px; /* Wider max */
+  margin: 40px auto;
+  padding: 40px;
+  background-color: var(--white-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.09);
 }
 
-h1, h2 {
-  color: #333;
+/* --- Headings & Typography --- */
+h1, h2, h3, h4 {
+  color: var(--dark-color);
+  margin-bottom: 0.8em;
+  font-weight: 700; /* Bolder headings */
+  line-height: 1.3;
+}
+h1 {
+  font-size: 2.8em;
   text-align: center;
+  margin-bottom: 1.5em;
+  color: var(--primary-darker);
+  border-bottom: 4px solid var(--primary-color); /* Thicker underline */
+  padding-bottom: 0.6em;
+  font-weight: 800;
+}
+h2 { /* Section Titles */
+  font-size: 2em;
+  margin-top: 2.5em;
+  margin-bottom: 1.2em;
+  border-bottom: 2px solid var(--light-border);
+  padding-bottom: 0.6em;
+  color: var(--primary-color); /* Use primary for section titles */
+  font-weight: 700;
+}
+h3 { /* Sub-Section / Form Titles */
+  font-size: 1.6em;
+  margin-top: 1.8em;
+  margin-bottom: 1.2em;
+  color: var(--secondary-darker);
+}
+h4 { /* Card Sub-Headings */
+  margin-top: 1.5em;
+  margin-bottom: 0.8em;
+  color: var(--text-muted);
+  font-size: 1.1em;
+  font-weight: 600;
+  border-bottom: 1px solid var(--light-border);
+  padding-bottom: 0.4em;
+}
+p {
+  margin-bottom: 1em;
+  color: #555; /* Slightly softer paragraph text */
 }
 
+/* --- Sections & HR --- */
 section {
-  margin-bottom: 20px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  margin-bottom: 50px;
+  padding: 30px;
+  border: none; /* Remove section borders, rely on bg and container */
+  border-radius: var(--border-radius-lg);
+  background-color: var(--white-color); /* Keep sections white */
+  box-shadow: var(--card-shadow); /* Give sections a subtle shadow */
+}
+hr {
+  border: 0;
+  height: 1px;
+  background-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.1), transparent);
+  margin: 60px 0;
 }
 
-.veiculo-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
+/* --- Forms --- */
+.adicionar-container {
+  display: grid; /* Use grid for better control */
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Responsive columns */
+  gap: 40px;
 }
-
-.veiculo-container img {
-  max-width: 300px;
-  margin-bottom: 10px;
-  border-radius: 5px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+.form-adicionar {
+  border: 1px solid var(--light-border);
+  padding: 30px;
+  border-radius: var(--border-radius-lg);
+  background-color: var(--light-color); /* Light BG for forms */
+  transition: var(--transition-base);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-
+.form-adicionar:focus-within { /* Highlight form when input is focused */
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.1);
+}
+.form-adicionar h3 {
+  margin-top: 0;
+  margin-bottom: 1.5em;
+  text-align: center;
+  color: var(--primary-darker);
+  font-size: 1.5em;
+}
 .form-group {
-  margin-bottom: 10px;
-  text-align: center; /* Center the form elements */
+  margin-bottom: 1.5em;
 }
-
 label {
-  display: inline-block;
-  width: 150px;
-  text-align: right;
-  margin-right: 10px;
+  display: block;
+  margin-bottom: 0.6em;
+  font-weight: 600;
+  font-size: 1em;
+  color: var(--dark-color);
 }
-
 input[type="text"],
-input[type="number"] {
-  width: 200px;
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box; /*  Ensures padding and border are included in the element's total width and height. */
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+textarea {
+  width: 100%;
+  padding: 14px 18px; /* Increased padding */
+  border: 1px solid var(--light-border);
+  border-radius: var(--border-radius-base);
+  font-size: 1em;
+  line-height: 1.5;
+  background-color: var(--white-color);
+  color: var(--dark-color);
+  transition: var(--transition-base);
+}
+input[type="text"]::placeholder,
+input[type="number"]::placeholder,
+textarea::placeholder { /* Style placeholder */
+  color: #aaa;
+  opacity: 1;
+}
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+textarea:focus {
+  border-color: var(--primary-color);
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.2); /* Adjusted focus glow */
+  background-color: #fefeff; /* Slightly different focus bg */
+}
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+.form-group small {
+  font-size: 0.9em;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 0.4em;
 }
 
-.button-group {
-  text-align: center;
-  margin-bottom: 10px;
-}
-
+/* --- Buttons --- */
 button {
-  padding: 10px 15px;
-  background-color: #4CAF50;
-  color: white;
+  padding: 12px 25px;
   border: none;
+  border-radius: var(--border-radius-base);
   cursor: pointer;
-  border-radius: 4px;
+  font-size: 0.95em; /* Slightly smaller base button font */
+  font-weight: 600;
+  line-height: 1.5;
   margin: 5px;
-  transition: background-color 0.3s;
+  transition: var(--transition-base);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  text-transform: uppercase;
+  letter-spacing: 0.8px; /* More spacing */
+  outline: none; /* Remove default outline */
+}
+button:focus-visible { /* Style focus state only when using keyboard */
+   box-shadow: 0 0 0 0.25rem rgba(var(--focus-ring-rgb, 0, 123, 255), 0.4);
+}
+button:not(:disabled):hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+button:not(:disabled):active { /* Pressed state */
+   transform: translateY(0px);
+   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+button:disabled {
+  background-color: #e9ecef;
+  color: var(--text-muted);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  opacity: 0.65;
 }
 
-button:hover {
-  background-color: #3e8e41;
+/* Primary Button */
+.btn-primary,
+#criarCarroEsportivoBtn, #criarCaminhaoBtn, #formAgendamento button[type="submit"] {
+  background-color: var(--primary-color);
+  color: var(--white-color);
+  --focus-ring-rgb: 0, 123, 255; /* For focus-visible */
+}
+.btn-primary:hover:not(:disabled),
+#criarCarroEsportivoBtn:hover:not(:disabled), #criarCaminhaoBtn:hover:not(:disabled), #formAgendamento button[type="submit"]:hover:not(:disabled) {
+  background-color: var(--primary-darker);
 }
 
-#statusCarroEsportivo,
-#statusCaminhao,
-#informacoesVeiculo,
-#interacaoVeiculo {
+/* Danger Button */
+.btn-danger, .btn-remover {
+  background-color: var(--danger-color);
+  color: var(--white-color);
+   --focus-ring-rgb: 220, 53, 69;
+}
+.btn-danger:hover:not(:disabled), .btn-remover:hover:not(:disabled) {
+  background-color: var(--danger-darker);
+}
+
+/* Secondary/Cancel Button */
+.btn-secondary, #formAgendamento button[type="button"] {
+  background-color: var(--secondary-color);
+  color: var(--white-color);
+   --focus-ring-rgb: 108, 117, 125;
+}
+.btn-secondary:hover:not(:disabled), #formAgendamento button[type="button"]:hover:not(:disabled) {
+  background-color: var(--secondary-darker);
+}
+
+/* Vehicle Action Buttons (Smaller, specific colors) */
+.button-group-veiculo {
+  grid-column: 2;
+  grid-row: 3; /* Positioned below status */
   margin-top: 10px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  background-color: #f9f9f9;
-  border-radius: 4px;
-  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center; /* Align buttons vertically if they wrap */
+}
+.button-group-veiculo button {
+  font-size: 0.8em;
+  padding: 7px 10px; /* Adjusted padding */
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  text-transform: none;
+  letter-spacing: 0;
+  display: inline-flex; /* For potential icon alignment */
+  align-items: center;
+  justify-content: center;
+  gap: 5px; /* Space between icon and text if icon added */
+}
+/* Individual action button colors (using CSS vars) */
+.btn-veiculo-ligar { background-color: var(--success-color); color: white; --focus-ring-rgb: 40, 167, 69;}
+.btn-veiculo-ligar:hover:not(:disabled) { background-color: var(--success-darker); }
+.btn-veiculo-desligar { background-color: var(--warning-color); color: var(--dark-color); --focus-ring-rgb: 255, 193, 7;}
+.btn-veiculo-desligar:hover:not(:disabled) { background-color: var(--warning-darker); }
+.btn-veiculo-acelerar { background-color: var(--primary-color); color: white; --focus-ring-rgb: 0, 123, 255;}
+.btn-veiculo-acelerar:hover:not(:disabled) { background-color: var(--primary-darker); }
+.btn-veiculo-frear { background-color: #fd7e14; color: white; --focus-ring-rgb: 253, 126, 20;} /* Orange */
+.btn-veiculo-frear:hover:not(:disabled) { background-color: #e36402; }
+.btn-veiculo-turbo-on { background-color: #6f42c1; color: white; --focus-ring-rgb: 111, 66, 193;} /* Indigo */
+.btn-veiculo-turbo-on:hover:not(:disabled) { background-color: #5a32a3; }
+.btn-veiculo-turbo-off { background-color: var(--secondary-color); color: white; --focus-ring-rgb: 108, 117, 125;}
+.btn-veiculo-turbo-off:hover:not(:disabled) { background-color: var(--secondary-darker); }
+.btn-veiculo-carregar { background-color: #20c997; color: white; --focus-ring-rgb: 32, 201, 151;} /* Teal */
+.btn-veiculo-carregar:hover:not(:disabled) { background-color: #1baa80; }
+.btn-veiculo-descarregar { background-color: #e83e8c; color: white; --focus-ring-rgb: 232, 62, 140;} /* Pink */
+.btn-veiculo-descarregar:hover:not(:disabled) { background-color: #d32578; }
+.btn-veiculo-agendar { background-color: var(--info-color); color: white; --focus-ring-rgb: 23, 162, 184;} /* Info Teal for Schedule */
+.btn-veiculo-agendar:hover:not(:disabled) { background-color: var(--info-darker); }
+/* Ensure remove uses danger style */
+.button-group-veiculo button.btn-remover {
+  background-color: var(--danger-color); color: white; --focus-ring-rgb: 220, 53, 69;
+}
+.button-group-veiculo button.btn-remover:hover:not(:disabled) {
+  background-color: var(--danger-darker);
 }
 
-#feedbackVisualCarroEsportivo,
-#feedbackVisualCaminhao {
-  margin-top: 10px;
-  padding: 5px;
+/* --- Vehicle Item Card --- */
+#listaCarros h3, #listaCaminhoes h3 { /* Titles for Car/Truck lists */
+  font-size: 1.4em;
+  color: var(--secondary-darker);
+  margin-bottom: 1em;
+  margin-top: 0; /* Remove top margin if it's first in section */
+}
+.veiculo-item {
+  border: 1px solid var(--light-border);
+  padding: 30px;
+  margin-bottom: 30px;
+  border-radius: var(--border-radius-lg);
+  background-color: var(--white-color);
+  box-shadow: var(--card-shadow);
+  display: grid;
+  grid-template-columns: 200px 1fr; /* Slightly wider image */
+  grid-template-rows: auto auto auto 1fr; /* Info, Status, Buttons, History */
+  gap: 15px 30px; /* Row gap, Column gap */
+  align-items: start;
+  transition: var(--transition-base);
+  overflow: hidden; /* Prevent content overflow */
+}
+.veiculo-item:hover {
+  box-shadow: var(--card-hover-shadow);
+  transform: translateY(-4px); /* More lift */
+}
+
+.veiculo-item img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--border-radius-base);
+  grid-row: 1 / span 4;
+  grid-column: 1;
+  align-self: center;
+  border: 1px solid #eee; /* Slightly visible border */
+  background-color: #f8f9fa; /* BG for image area */
+  padding: 5px; /* Padding around image */
+}
+.veiculo-item img[src$="default-vehicle.png"] {
+  opacity: 0.4;
+  border: 1px dashed #ccc;
+  padding: 15px; /* More padding for default */
+}
+
+.veiculo-info {
+  grid-column: 2;
+  grid-row: 1;
+}
+.veiculo-item p {
+  margin: 0 0 0.6em 0;
+  font-size: 1em;
+  color: #444;
+}
+.veiculo-item p strong { /* Model */
+  font-size: 1.4em;
+  font-weight: 700;
+  color: var(--dark-color);
+  display: block;
+  margin-bottom: 0.4em;
+}
+/* Specific details styling */
+.veiculo-item .detail-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-right: 5px;
+}
+.veiculo-item .detail-value {
+  font-weight: 500;
+  color: var(--dark-color);
+}
+
+.status-veiculo { /* Status Badge */
+  grid-column: 2;
+  grid-row: 2;
+  font-style: normal; /* Remove italic */
+  color: var(--dark-color);
+  min-height: auto; /* Remove min-height */
+  margin-top: 5px !important;
+  font-size: 0.85em;
+  font-weight: 600;
+  padding: 6px 12px; /* Badge padding */
+  border-radius: 15px; /* Pill shape */
+  display: inline-block;
+  max-width: 100%;
   text-align: center;
+  transition: var(--transition-base);
+  opacity: 0; /* Hidden by default, fade in */
+  transform: translateY(5px);
+}
+.status-veiculo.visible { /* Add this class via JS when message appears */
+  opacity: 1;
+  transform: translateY(0);
+}
+/* Badge colors */
+.status-veiculo[data-status-type="info"] { background-color: #e7f3ff; color: #004085; border: 1px solid #b8daff; }
+.status-veiculo[data-status-type="success"] { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.status-veiculo[data-status-type="warning"] { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+.status-veiculo[data-status-type="error"] { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.status-veiculo[data-status-type="turbo"] { background-color: #e2d9f3; color: #4b3275; border: 1px solid #d1c4e9; }
+
+
+.historico-manutencao {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  margin-top: 25px;
+  border-top: 1px solid var(--light-border);
+  padding-top: 25px;
+}
+.historico-manutencao ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.9em;
+  max-height: 160px;
+  overflow-y: auto;
+  border: 1px solid var(--light-border);
+  padding: 15px 20px; /* More horizontal padding */
+  border-radius: var(--border-radius-base);
+  background-color: var(--light-color);
+  /* Custom Scrollbar (Webkit) */
+  &::-webkit-scrollbar { width: 8px; }
+  &::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+  &::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+  &::-webkit-scrollbar-thumb:hover { background: #aaa; }
+  /* Custom Scrollbar (Firefox) */
+  scrollbar-width: thin;
+  scrollbar-color: #ccc #f1f1f1;
+}
+.historico-manutencao li {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dotted #ccc;
+  line-height: 1.5;
+}
+.historico-manutencao li:last-child {
+  border-bottom: none; margin-bottom: 0; padding-bottom: 0;
+}
+
+/* --- Modal --- */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1050;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  overflow-y: auto; /* Allow modal scroll if content is tall */
+  background-color: rgba(30, 40, 50, 0.8); /* Darker, slightly blue overlay */
+  backdrop-filter: blur(5px);
+  padding: 30px 0; /* Add padding top/bottom for scroll */
+}
+.modal-content {
+  background-color: var(--white-color);
+  margin: 5% auto; /* Centered with top margin */
+  padding: 40px;
+  border: none;
+  width: 90%;
+  max-width: 650px; /* Wider modal */
+  border-radius: var(--border-radius-lg);
+  position: relative;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+  animation: scaleInModal 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); /* Scale animation */
+}
+@keyframes scaleInModal {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 1.8em;
+  text-align: center;
+  color: var(--primary-color);
+  font-size: 1.8em;
+}
+.close-button {
+  color: #aaa;
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 2.2rem;
+  font-weight: 300; /* Thinner X */
+  line-height: 1;
+  transition: var(--transition-base);
+  cursor: pointer;
+}
+.close-button:hover,
+.close-button:focus {
+  color: var(--danger-color); /* Red close on hover */
+  transform: rotate(90deg); /* Rotate on hover */
+}
+#formAgendamento .button-group {
+  text-align: right; margin-top: 30px;
+}
+#formAgendamento .button-group button {
+  margin-left: 10px; /* Space between modal buttons */
+}
+
+/* --- Appointments List --- */
+#agendamentosFuturos ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 1em;
+}
+#agendamentosFuturos li {
+  background-color: #fff9e0; /* Softer yellow */
+  padding: 15px 20px;
+  margin-bottom: 12px;
+  border-left: 6px solid var(--warning-color);
+  border-radius: var(--border-radius-base);
+  font-size: 1em;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+  color: #665c24; /* Darker text for yellow */
+  transition: var(--transition-base);
+}
+#agendamentosFuturos li:hover {
+  background-color: #fffcec;
+  border-left-color: var(--warning-darker);
+  box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+}
+
+/* --- Global Status Area --- */
+#globalStatus {
+  padding: 15px 25px;
+  margin: 0 auto 30px auto;
+  border-radius: var(--border-radius-base);
+  text-align: center;
+  font-weight: 500;
+  display: none; /* Controlled by JS */
+  width: 90%;
+  max-width: 850px;
+  border: 1px solid transparent; /* Base border */
+  font-size: 1.05em;
+}
+/* Use classes for styling */
+#globalStatus.status-info { background-color: #e1f5fe; color: #01579b; border-color: #b3e5fc; display: block; }
+#globalStatus.status-success { background-color: #e8f5e9; color: #1b5e20; border-color: #c8e6c9; display: block; }
+#globalStatus.status-warning { background-color: #fffde7; color: #f57f17; border-color: #fff9c4; display: block; }
+#globalStatus.status-error { background-color: #ffebee; color: #b71c1c; border-color: #ffcdd2; display: block; }
+
+
+/* --- Responsive --- */
+@media (max-width: 1200px) {
+  .container { max-width: 1140px; }
+  .veiculo-item { grid-template-columns: 180px 1fr; }
+}
+@media (max-width: 992px) {
+  body { font-size: 15px; }
+  .container { width: 95%; padding: 25px; }
+  .veiculo-item { grid-template-columns: 150px 1fr; gap: 15px 20px; padding: 25px;}
+  h1 { font-size: 2.4em; }
+  h2 { font-size: 1.8em; }
+  .adicionar-container { grid-template-columns: 1fr; } /* Stack forms earlier */
+}
+@media (max-width: 768px) {
+  .container { margin: 20px auto; border-radius: 0; }
+  .veiculo-item {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto auto auto;
+      gap: 20px 0;
+      padding: 20px;
+      box-shadow: var(--card-shadow); /* Keep shadow */
+  }
+   .veiculo-item img {
+      grid-row: 1; grid-column: 1;
+      max-width: 200px; margin: 0 auto 20px auto;
+      align-self: center; border: 1px solid #eee;
+  }
+  .veiculo-info { grid-row: 2; text-align: center; }
+  .status-veiculo { grid-row: 3; margin: 10px auto; }
+  .button-group-veiculo { grid-row: 4; justify-content: center; gap: 8px; margin-top: 10px; }
+  .historico-manutencao { grid-row: 5; margin-top: 25px; padding-top: 20px; }
+  .button-group-veiculo button { font-size: 0.85em; padding: 8px 12px;}
+
+  .modal-content { width: 95%; margin: 10% auto; padding: 30px; }
+  #formAgendamento .button-group { text-align: center; }
+  #formAgendamento button { display: block; width: 100%; margin: 12px 0; }
+
+}
+@media (max-width: 480px) {
+  body { font-size: 14px; }
+  .container { padding: 15px; margin: 0 auto; width: 100%; }
+  h1 { font-size: 2em; }
+  h2 { font-size: 1.5em; }
+  h3 { font-size: 1.3em; }
+  button { font-size: 0.9em; padding: 10px 18px;}
+  .veiculo-item img { max-width: 160px; }
+  .button-group-veiculo button { font-size: 0.8em; padding: 7px 10px;}
+  .historico-manutencao ul { font-size: 0.88em;}
+  #agendamentosFuturos li { padding: 12px 15px; font-size: 0.9em;}
+  .modal-content { margin: 5% auto; padding: 25px; }
+  input, textarea, label { font-size: 1em; } /* Keep inputs readable */
+  section { padding: 20px; }
 }
