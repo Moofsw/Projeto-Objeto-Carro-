@@ -2,16 +2,28 @@
 
 // --- CLASSES ---
 
-// Vehicle Class - Optional: Make methods slightly more robust
+/**
+ * Represents a generic vehicle.
+ */
 class Vehicle {
+    /**
+     * Creates a Vehicle instance.
+     * @param {string} modelo - The model of the vehicle.
+     * @param {string} cor - The color of the vehicle.
+     * @param {string|null} [id=null] - Optional existing ID. If null, a new unique ID is generated.
+     */
     constructor(modelo, cor, id = null) {
+        if (typeof modelo !== 'string' || !modelo.trim()) throw new Error("Modelo do veículo é obrigatório.");
+        if (typeof cor !== 'string' || !cor.trim()) throw new Error("Cor do veículo é obrigatória.");
+
         this.id = id || `veh_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-        this.modelo = modelo;
-        this.cor = cor;
+        this.modelo = modelo.trim();
+        this.cor = cor.trim();
         this.ligado = false;
         this.velocidade = 0;
+        /** @type {Manutencao[]} */
         this.historicoManutencao = [];
-        this._tipoVeiculo = "Veiculo";
+        this._tipoVeiculo = "Veiculo"; // Used for reconstruction and identification
     }
 
     ligar() {
@@ -22,80 +34,128 @@ class Vehicle {
 
     desligar() {
         if (!this.ligado) return `${this.modelo} já está desligado.`;
+        // *** CORRECTION: Prevent turning off if moving ***
+        if (this.velocidade > 0) {
+            return `${this.modelo} precisa parar completamente (velocidade 0) antes de desligar.`;
+        }
         this.ligado = false;
-        this.velocidade = 0; // Reset speed when turned off
+        this.velocidade = 0; // Ensure speed is 0
         return `${this.modelo} desligado.`;
     }
 
+    /**
+     * Accelerates the vehicle by a given increment.
+     * @param {number|string} incremento - The amount to increase speed by (km/h). Must be positive.
+     * @returns {string} Status message.
+     */
     acelerar(incremento) {
         const incValue = parseFloat(incremento);
-        if (isNaN(incValue) || incValue <= 0) { // Increment must be positive
-             console.warn(`[acelerar] Incremento inválido ou não positivo (${incremento}).`);
-             return `${this.modelo} - Valor de aceleração inválido: ${incremento}`;
+        if (isNaN(incValue) || incValue <= 0) {
+             console.warn(`[acelerar] Tentativa de acelerar com valor inválido ou não positivo: ${incremento}`);
+             return `${this.modelo} - Valor de aceleração inválido: ${incremento}. Deve ser um número positivo.`;
         }
-
-        if (this.ligado) {
-            this.velocidade += incValue;
-            return `${this.modelo} acelerou para ${this.velocidade} km/h.`;
-        } else {
+        if (!this.ligado) {
             return `${this.modelo} precisa estar ligado para acelerar.`;
         }
+        this.velocidade += incValue;
+        return `${this.modelo} acelerou para ${this.velocidade.toFixed(1)} km/h.`; // Use toFixed for potential float results
     }
 
+    /**
+     * Decelerates the vehicle by a given decrement.
+     * @param {number|string} decremento - The amount to decrease speed by (km/h). Must be positive.
+     * @returns {string} Status message.
+     */
     frear(decremento) {
         const decValue = parseFloat(decremento);
-        if (isNaN(decValue) || decValue <= 0) { // Decrement must be positive
-            console.warn(`[frear] Decremento inválido ou não positivo (${decremento}).`);
-             return `${this.modelo} - Valor de frenagem inválido: ${decremento}`;
+        if (isNaN(decValue) || decValue <= 0) {
+            console.warn(`[frear] Tentativa de frear com valor inválido ou não positivo: ${decremento}`);
+            return `${this.modelo} - Valor de frenagem inválido: ${decremento}. Deve ser um número positivo.`;
         }
-        // Speed cannot go below 0
+        // Cannot go below 0 speed
         this.velocidade = Math.max(0, this.velocidade - decValue);
-        return `${this.modelo} freou para ${this.velocidade} km/h.`;
+        return `${this.modelo} freou para ${this.velocidade.toFixed(1)} km/h.`; // Use toFixed
     }
 
+    /**
+     * Adds a maintenance record to the vehicle's history.
+     * @param {Manutencao} manutencaoObj - An instance of the Manutencao class.
+     * @returns {boolean} True if added successfully, false otherwise.
+     */
     adicionarManutencao(manutencaoObj) {
-        // Ensure Manutencao class is available (might need explicit check if not using modules/bundlers)
-        if (typeof Manutencao === 'undefined' || !(manutencaoObj instanceof Manutencao)) {
-            console.error("Objeto inválido ou classe Manutencao não definida. Apenas instâncias de Manutencao podem ser adicionadas.");
-            displayAlert("Erro: Objeto de manutenção inválido.", "error");
+        if (!(manutencaoObj instanceof Manutencao)) {
+            console.error("Objeto inválido passado para adicionarManutencao. Apenas instâncias de Manutencao são permitidas.", manutencaoObj);
+            displayGlobalAlert("Erro interno: Tentativa de adicionar registro de manutenção inválido.", "error");
             return false;
         }
         if (!manutencaoObj.veiculoId) {
              manutencaoObj.veiculoId = this.id;
         } else if (manutencaoObj.veiculoId !== this.id) {
-            console.warn(`Manutenção ${manutencaoObj.id} (Veículo ${manutencaoObj.veiculoId}) sendo adicionada ao histórico do veículo ${this.id}.`);
-            // Decide if this is allowed or should be an error
+            console.warn(`Manutenção ${manutencaoObj.id} (Veículo ${manutencaoObj.veiculoId}) sendo associada ao veículo ${this.id}. Verifique a lógica se inesperado.`);
+            manutencaoObj.veiculoId = this.id; // Force correct ID association
         }
 
         this.historicoManutencao.push(manutencaoObj);
-        this.historicoManutencao.sort((a, b) => new Date(b.data) - new Date(a.data));
-        console.log(`Manutenção adicionada ao ${this.modelo}: ${manutencaoObj.formatar()}`);
+        // Sort by date descending (most recent first)
+        this.historicoManutencao.sort((a, b) => {
+            // Handle potential invalid dates during sort
+            const dateA = new Date(a.data);
+            const dateB = new Date(b.data);
+            if (isNaN(dateA.getTime())) return 1; // Invalid dates go last
+            if (isNaN(dateB.getTime())) return -1;
+            return dateB - dateA;
+        });
+        console.log(`Manutenção adicionada ao ${this.modelo}: ${manutencaoObj.tipo}`);
         return true;
     }
 
+    /**
+     * Gets the maintenance history formatted as HTML list items.
+     * @returns {string} HTML string (<li> elements) or a message if history is empty.
+     */
     getHistoricoFormatado() {
         if (!this.historicoManutencao || this.historicoManutencao.length === 0) {
-            return "<li>Nenhum registro de manutenção.</li>"; // Return as LI for consistency
+            return "<li class='empty-history'>Nenhum registro de manutenção encontrado.</li>";
         }
-        // Ensure all items are valid Manutencao objects before formatting
-        return this.historicoManutencao
-                 .filter(m => m instanceof Manutencao) // Extra safety check
+        // Defensive check: ensure items are Manutencao instances before formatting
+        const historyItems = this.historicoManutencao
+                 .filter(m => m instanceof Manutencao)
                  .map(m => `<li>${m.formatar()}</li>`).join('');
+
+        return historyItems || "<li class='empty-history error'>Erro ao formatar histórico.</li>"; // Fallback
     }
 
+    /**
+     * Returns basic vehicle information as a string.
+     * @returns {string} Basic info string.
+     * @protected
+     */
     exibirInformacoesBase() {
-         // Added vehicle type for clarity
-         return `Tipo: ${this._tipoVeiculo}, ID: ${this.id}, Modelo: ${this.modelo}, Cor: ${this.cor}, Ligado: ${this.ligado ? 'Sim' : 'Não'}, Velocidade: ${this.velocidade} km/h`;
+         // Using template literals for clarity
+         return `Tipo: ${this._tipoVeiculo}, ID: ${this.id}, Modelo: ${this.modelo}, Cor: ${this.cor}, Ligado: ${this.ligado ? 'Sim' : 'Não'}, Velocidade: ${this.velocidade.toFixed(1)} km/h`;
     }
 
+    /**
+     * Returns detailed vehicle information (can be overridden by subclasses).
+     * @returns {string} Detailed info string.
+     */
     exibirInformacoes() {
         return this.exibirInformacoesBase();
     }
 
+    /**
+     * Returns a generic interaction message (can be overridden).
+     * @returns {string} Interaction message.
+     */
     interagir() {
         return `Interagindo com ${this._tipoVeiculo.toLowerCase()}: ${this.modelo}.`;
     }
 
+    /**
+     * Creates a plain object representation suitable for JSON serialization.
+     * Includes the type identifier for reconstruction.
+     * @returns {object} Plain data object.
+     */
     toJSON() {
         return {
             id: this.id,
@@ -103,64 +163,91 @@ class Vehicle {
             cor: this.cor,
             ligado: this.ligado,
             velocidade: this.velocidade,
-            // Ensure historico has valid objects before calling toJSON on them
-            historicoManutencao: this.historicoManutencao
+            // Ensure history contains valid Manutencao objects before serializing
+            historicoManutencao: (this.historicoManutencao || [])
                                      .filter(m => m instanceof Manutencao && typeof m.toJSON === 'function')
                                      .map(m => m.toJSON()),
-            _tipoVeiculo: this._tipoVeiculo
+            _tipoVeiculo: this._tipoVeiculo // Crucial for reconstruction
         };
     }
 
+     /**
+     * Creates a Vehicle instance (or subclass) from a plain data object.
+      * Relies on the `_tipoVeiculo` property in the data and the existence of `Manutencao.fromJSON`.
+     * @param {object} data - The plain data object.
+     * @returns {Vehicle|CarroEsportivo|Caminhao|null} The reconstructed vehicle instance, or null on failure.
+     */
      static fromJSON(data) {
-        if (!data || !data._tipoVeiculo || typeof Manutencao?.fromJSON !== 'function') {
-             console.error("Dados inválidos ou classe Manutencao/fromJSON não disponível para reconstrução do Veículo.", data);
+        // Basic validation of input data
+        if (!data || typeof data !== 'object' || !data._tipoVeiculo || !data.id) {
+             console.error("Dados inválidos ou ausentes para reconstrução do Veículo. '_tipoVeiculo' e 'id' são necessários.", data);
              return null;
+        }
+        // Check if the required Manutencao class and its fromJSON method are available
+        if (typeof Manutencao?.fromJSON !== 'function') {
+             console.error("Classe Manutencao ou método Manutencao.fromJSON não estão disponíveis. Impossível reconstruir histórico.");
+             return null; // Cannot proceed without Manutencao reconstruction logic
         }
 
         let vehicle = null;
         try {
+            // Instantiate the correct subclass based on _tipoVeiculo
             switch (data._tipoVeiculo) {
                 case 'CarroEsportivo':
-                    vehicle = new CarroEsportivo(data.modelo, data.cor, data.id);
-                     if (typeof data.turboAtivado !== 'undefined') {
-                        vehicle.turboAtivado = data.turboAtivado;
-                     }
+                    vehicle = new CarroEsportivo(data.modelo || 'Modelo Desconhecido', data.cor || 'Cor Desconhecida', data.id);
+                    if (typeof data.turboAtivado === 'boolean') vehicle.turboAtivado = data.turboAtivado;
                     break;
                 case 'Caminhao':
-                    vehicle = new Caminhao(data.modelo, data.cor, data.capacidadeCarga || 0, data.id);
-                     if (typeof data.cargaAtual !== 'undefined') {
-                        vehicle.cargaAtual = data.cargaAtual;
+                    const capacidade = typeof data.capacidadeCarga === 'number' && data.capacidadeCarga >= 0 ? data.capacidadeCarga : 0;
+                    vehicle = new Caminhao(data.modelo || 'Modelo Desconhecido', data.cor || 'Cor Desconhecida', capacidade, data.id);
+                     if (typeof data.cargaAtual === 'number') {
+                        vehicle.cargaAtual = Math.min(Math.max(0, data.cargaAtual), vehicle.capacidadeCarga);
                      }
                     break;
-                case 'Veiculo':
-                default:
-                    vehicle = new Vehicle(data.modelo, data.cor, data.id);
+                case 'Veiculo': // Fallback for base Vehicle class
+                default: // Handle unknown types gracefully
+                    if (data._tipoVeiculo !== 'Veiculo') {
+                        console.warn(`Tipo de veículo desconhecido ('${data._tipoVeiculo}') encontrado durante a reconstrução. Tratando como Veículo base.`);
+                    }
+                    vehicle = new Vehicle(data.modelo || 'Modelo Desconhecido', data.cor || 'Cor Desconhecida', data.id);
+                    // Preserve original type string if it was unknown, in case it's useful for debugging
+                    if (data._tipoVeiculo !== 'Veiculo') vehicle._tipoVeiculo = data._tipoVeiculo;
                     break;
             }
 
-            // Restore common properties carefully
+            // Restore common properties carefully, checking types
             vehicle.ligado = typeof data.ligado === 'boolean' ? data.ligado : false;
-            vehicle.velocidade = typeof data.velocidade === 'number' ? data.velocidade : 0;
+            vehicle.velocidade = typeof data.velocidade === 'number' ? Math.max(0, data.velocidade) : 0; // Ensure non-negative
 
-            // Reconstruct Manutencao objects, checking array existence and type
-            if (data.historicoManutencao && Array.isArray(data.historicoManutencao)) {
+            // Reconstruct Manutencao objects from the history array
+            if (Array.isArray(data.historicoManutencao)) {
                 vehicle.historicoManutencao = data.historicoManutencao
-                    .map(m_data => Manutencao.fromJSON(m_data)) // Use Manutencao's static method
-                    .filter(m => m !== null); // Filter out any nulls if reconstruction failed
-                vehicle.historicoManutencao.sort((a, b) => new Date(b.data) - new Date(a.data));
+                    .map(m_data => Manutencao.fromJSON(m_data)) // Attempt reconstruction
+                    .filter(m => m instanceof Manutencao);      // Keep only successful reconstructions
+
+                // Re-sort after loading, as order might not be guaranteed in storage or reconstruction
+                vehicle.historicoManutencao.sort((a, b) => {
+                    const dateA = new Date(a.data);
+                    const dateB = new Date(b.data);
+                    if (isNaN(dateA.getTime())) return 1;
+                    if (isNaN(dateB.getTime())) return -1;
+                    return dateB - dateA;
+                });
             } else {
-                 vehicle.historicoManutencao = [];
+                 vehicle.historicoManutencao = []; // Initialize as empty if missing or invalid
             }
+
             return vehicle;
 
         } catch (error) {
-             console.error(`Erro ao reconstruir veículo tipo '${data._tipoVeiculo}' a partir de JSON:`, error, data);
+             // Catch errors during instantiation or property assignment
+             console.error(`Erro crítico ao reconstruir veículo (ID: ${data.id}, Tipo: '${data._tipoVeiculo}') a partir de JSON:`, error.message, data);
              return null; // Return null if any error occurs during reconstruction
         }
     }
 }
 
-// CarroEsportivo Class
+// --- CarroEsportivo Class ---
 class CarroEsportivo extends Vehicle {
     constructor(modelo, cor, id = null) {
         super(modelo, cor, id);
@@ -172,92 +259,109 @@ class CarroEsportivo extends Vehicle {
         if (!this.ligado) return `${this.modelo} precisa estar ligado para ativar o turbo.`;
         if (this.turboAtivado) return `${this.modelo} turbo já está ativado.`;
         this.turboAtivado = true;
-        // Maybe add a speed boost?
-        // this.acelerar(20); // Example: Turbo gives an extra boost
-        return 'Turbo ativado!';
+        return `${this.modelo}: Turbo ativado!`;
     }
 
     desativarTurbo() {
         if (!this.turboAtivado) return `${this.modelo} turbo já está desativado.`;
         this.turboAtivado = false;
-        return 'Turbo desativado.';
+        return `${this.modelo}: Turbo desativado.`;
     }
 
-    // Override desligar to also turn off turbo
+    // Override desligar to also turn off turbo for safety
     desligar() {
-        const msg = super.desligar(); // Call parent desligar first
-        this.turboAtivado = false; // Ensure turbo is off
-        return msg + " Turbo desativado.";
+        // Check condition *before* calling super.desligar()
+        if (this.velocidade > 0) {
+             return `${this.modelo} precisa parar completamente (velocidade 0) antes de desligar.`;
+        }
+        // If stopped, call parent method
+        const msgBase = super.desligar();
+        // If parent call was successful (vehicle is now off)
+        if (this.ligado === false) {
+             this.turboAtivado = false; // Ensure turbo is off
+             return msgBase + " Turbo também foi desativado.";
+        }
+        // This part should theoretically not be reached if super.desligar() only works when stopped
+        return msgBase;
     }
-
 
     exibirInformacoes() {
         return `${super.exibirInformacoesBase()}, Turbo: ${this.turboAtivado ? 'Ativado' : 'Desativado'}`;
     }
 
     interagir() {
-        return `Interagindo com ${this._tipoVeiculo.toLowerCase()}: ${this.modelo} com turbo ${this.turboAtivado ? 'ativado' : 'desativado'}.`;
+        return `Acelerando o ${this.modelo} ${this.cor}${this.turboAtivado ? ' com o turbo LIGADO!' : ''}. Vruum!`;
     }
 
     toJSON() {
-        const data = super.toJSON();
-        data.turboAtivado = this.turboAtivado;
+        const data = super.toJSON(); // Get base vehicle data
+        data.turboAtivado = this.turboAtivado; // Add specific property
         return data;
     }
 }
 
-// Caminhao Class
+// --- Caminhao Class ---
 class Caminhao extends Vehicle {
     constructor(modelo, cor, capacidadeCarga, id = null) {
         super(modelo, cor, id);
-        // Ensure capacidadeCarga is a non-negative number
-        this.capacidadeCarga = Math.max(0, parseFloat(capacidadeCarga) || 0);
-        this.cargaAtual = 0;
-         this._tipoVeiculo = "Caminhao";
+        // Ensure capacidadeCarga is a non-negative number during construction
+        const capNum = parseFloat(capacidadeCarga);
+        this.capacidadeCarga = !isNaN(capNum) && capNum >= 0 ? capNum : 0;
+        if (this.capacidadeCarga !== capNum) { // Warn if value was changed
+            console.warn(`Capacidade de carga inválida (${capacidadeCarga}) para ${modelo}, definida para ${this.capacidadeCarga}.`);
+        }
+        this.cargaAtual = 0; // Start empty
+        this._tipoVeiculo = "Caminhao";
     }
 
+    /**
+     * Loads cargo onto the truck.
+     * @param {number|string} quantidade - Amount of cargo to load (kg). Must be positive.
+     * @returns {string} Status message.
+     */
     carregar(quantidade) {
          const quantNum = parseFloat(quantidade);
-         if (isNaN(quantNum) || quantNum <= 0) return "Quantidade inválida para carregar.";
-
-         if (!this.ligado) { // Maybe trucks need to be on to load/unload? Optional rule.
-            // return `${this.modelo} precisa estar ligado para carregar.`;
-         }
+         if (isNaN(quantNum) || quantNum <= 0) return "Quantidade inválida para carregar. Deve ser um número positivo.";
 
         const espacoDisponivel = this.capacidadeCarga - this.cargaAtual;
-        if (quantNum <= espacoDisponivel) {
-            this.cargaAtual += quantNum;
-            return `Caminhão carregado com ${quantNum} kg. Carga atual: ${this.cargaAtual} kg.`;
+        if (espacoDisponivel <= 0) {
+             return `${this.modelo} já está na capacidade máxima (${this.capacidadeCarga.toFixed(1)} kg). Não é possível carregar mais.`;
+        }
+
+        const cargaAdicionada = Math.min(quantNum, espacoDisponivel);
+        this.cargaAtual += cargaAdicionada;
+
+        if (cargaAdicionada < quantNum) {
+             // Loaded only partially
+             return `Capacidade máxima (${this.capacidadeCarga.toFixed(1)} kg) excedida. Carregado com os ${cargaAdicionada.toFixed(1)} kg restantes. Carga atual: ${this.cargaAtual.toFixed(1)}/${this.capacidadeCarga.toFixed(1)} kg.`;
         } else {
-            const podeCarregar = espacoDisponivel;
-            if (podeCarregar > 0) {
-                 this.cargaAtual += podeCarregar; // Load only what fits
-                 return `Capacidade máxima (${this.capacidadeCarga} kg) excedida. Carregado com ${podeCarregar} kg (restante). Carga atual: ${this.cargaAtual} kg.`;
-            } else {
-                return `Caminhão já está na capacidade máxima (${this.capacidadeCarga} kg). Não é possível carregar mais.`;
-            }
+            // Loaded fully
+            return `${this.modelo} carregado com ${cargaAdicionada.toFixed(1)} kg. Carga atual: ${this.cargaAtual.toFixed(1)}/${this.capacidadeCarga.toFixed(1)} kg.`;
         }
     }
 
+    /**
+     * Unloads cargo from the truck.
+     * @param {number|string} quantidade - Amount of cargo to unload (kg). Must be positive.
+     * @returns {string} Status message.
+     */
     descarregar(quantidade) {
          const quantNum = parseFloat(quantidade);
-         if (isNaN(quantNum) || quantNum <= 0) return "Quantidade inválida para descarregar.";
+         if (isNaN(quantNum) || quantNum <= 0) return "Quantidade inválida para descarregar. Deve ser um número positivo.";
 
-         if (!this.ligado) { // Optional rule
-             // return `${this.modelo} precisa estar ligado para descarregar.`;
-         }
+         if (this.cargaAtual === 0) return `${this.modelo} está vazio, não há o que descarregar.`;
 
          const descarregado = Math.min(quantNum, this.cargaAtual); // Cannot discharge more than available
          this.cargaAtual -= descarregado;
-         return `Caminhão descarregado em ${descarregado} kg. Carga atual: ${this.cargaAtual} kg.`;
+         return `${this.modelo} descarregado em ${descarregado.toFixed(1)} kg. Carga atual: ${this.cargaAtual.toFixed(1)}/${this.capacidadeCarga.toFixed(1)} kg.`;
     }
 
     exibirInformacoes() {
-        return `${super.exibirInformacoesBase()}, Capacidade: ${this.capacidadeCarga} kg, Carga Atual: ${this.cargaAtual} kg`;
+        return `${super.exibirInformacoesBase()}, Capacidade: ${this.capacidadeCarga.toFixed(1)} kg, Carga Atual: ${this.cargaAtual.toFixed(1)} kg`;
     }
 
     interagir() {
-        return `Interagindo com ${this._tipoVeiculo.toLowerCase()}: ${this.modelo} com carga atual de ${this.cargaAtual} kg.`;
+        return `Transportando ${this.cargaAtual.toFixed(1)} kg de carga com o caminhão ${this.modelo}.`;
     }
 
      toJSON() {
@@ -269,657 +373,743 @@ class Caminhao extends Vehicle {
 }
 
 // --- GARAGEM (Gerenciamento Central) ---
+/**
+ * Manages the collection of vehicles and persistence.
+ */
 class Garagem {
     constructor() {
+        /** @type {Array<Vehicle|CarroEsportivo|Caminhao>} */
         this.veiculos = [];
-        this.storageKey = 'garagemInteligente_v2'; // Consider versioning key if structure changes significantly
+        this.storageKey = 'garagemInteligente_v3_1'; // Version bump
+        console.log(`Garagem inicializada. Usando chave de armazenamento: ${this.storageKey}`);
     }
 
+    /**
+     * Adds a vehicle instance to the garage. Prevents duplicates by ID.
+     * @param {Vehicle|CarroEsportivo|Caminhao} veiculo - An instance of Vehicle or its subclasses.
+     * @returns {boolean} True if added successfully, false otherwise.
+     */
     adicionarVeiculo(veiculo) {
         if (!(veiculo instanceof Vehicle)) {
-            console.error("Apenas instâncias de Vehicle (ou subclasses) podem ser adicionadas.");
+            console.error("Tentativa de adicionar objeto inválido à garagem.", veiculo);
+             displayGlobalAlert("Erro interno: Tipo de veículo inválido.", "error");
             return false;
         }
         if (this.veiculos.some(v => v.id === veiculo.id)) {
-             console.warn(`Veículo com ID ${veiculo.id} (${veiculo.modelo}) já existe na garagem. Adição ignorada.`);
-             displayAlert(`Veículo ${veiculo.modelo} já existe!`, 'warning');
+             console.warn(`Veículo com ID ${veiculo.id} (${veiculo.modelo}) já existe. Adição ignorada.`);
+             displayGlobalAlert(`Veículo ${veiculo.modelo} (ID: ${veiculo.id}) já existe!`, 'warning');
              return false;
         }
+
         this.veiculos.push(veiculo);
+        console.log(`Veículo ${veiculo.modelo} (ID: ${veiculo.id}) adicionado.`);
         this.salvar();
         return true;
     }
 
+    /**
+     * Removes a vehicle from the garage by its ID.
+     * @param {string} idVeiculo - The ID of the vehicle to remove.
+     * @returns {boolean} True if removed successfully, false if not found.
+     */
     removerVeiculo(idVeiculo) {
         const index = this.veiculos.findIndex(v => v.id === idVeiculo);
         if (index > -1) {
-            const removido = this.veiculos.splice(index, 1);
-            console.log(`Veículo ${removido[0]?.modelo} removido.`);
+            const removido = this.veiculos.splice(index, 1)[0];
+            console.log(`Veículo ${removido?.modelo} (ID: ${idVeiculo}) removido.`);
             this.salvar();
             return true;
+        } else {
+            console.warn(`Tentativa de remover veículo com ID ${idVeiculo} não encontrado.`);
+            return false; // Feedback handled by caller
         }
-        console.warn(`Tentativa de remover veículo com ID ${idVeiculo} não encontrado.`);
-        return false;
     }
 
+    /**
+     * Finds a vehicle in the garage by its ID.
+     * @param {string} idVeiculo - The ID of the vehicle to find.
+     * @returns {Vehicle|CarroEsportivo|Caminhao|undefined} The vehicle instance if found, otherwise undefined.
+     */
     encontrarVeiculoPorId(idVeiculo) {
         return this.veiculos.find(v => v.id === idVeiculo);
     }
 
+    /**
+     * Saves the current state of the garage (all vehicles) to LocalStorage.
+     */
     salvar() {
         try {
             const dataToSave = this.veiculos.map(v => v.toJSON());
             localStorage.setItem(this.storageKey, JSON.stringify(dataToSave));
-            console.log(`${this.veiculos.length} veículos salvos no LocalStorage (${this.storageKey}).`);
+            // console.log(`${this.veiculos.length} veículos salvos.`); // Reduce noise
         } catch (error) {
-            console.error("Erro ao salvar garagem no LocalStorage:", error);
-            // Consider more specific error handling (e.g., quota exceeded)
-            displayAlert("Erro Crítico: Não foi possível salvar os dados da garagem. Verifique o console.", "error");
-        }
-    }
-
-    carregar() {
-        try {
-            const dataString = localStorage.getItem(this.storageKey);
-            if (dataString) {
-                const dataFromStorage = JSON.parse(dataString);
-                // Ensure it's an array before mapping
-                if (Array.isArray(dataFromStorage)) {
-                    this.veiculos = dataFromStorage
-                        .map(v_data => Vehicle.fromJSON(v_data)) // Use the static factory method
-                        .filter(v => v !== null); // Filter out nulls if reconstruction failed
-                    console.log(`${this.veiculos.length} veículos carregados do LocalStorage (${this.storageKey}).`);
-                } else {
-                     console.warn("Dado inválido encontrado no LocalStorage. Esperado um array.", dataFromStorage);
-                     this.veiculos = [];
-                     localStorage.removeItem(this.storageKey); // Clear invalid data
-                }
-            } else {
-                this.veiculos = [];
-                console.log(`Nenhuma garagem salva encontrada no LocalStorage (${this.storageKey}).`);
+            console.error("Erro CRÍTICO ao salvar garagem no LocalStorage:", error);
+            let message = "Erro Crítico: Não foi possível salvar os dados da garagem.";
+            if (error.name === 'QuotaExceededError' || (error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+                 message += " O armazenamento local está cheio.";
+                 console.error("LocalStorage Quota Exceeded!");
             }
-        } catch (error) {
-            console.error("Erro ao carregar/parsear garagem do LocalStorage:", error);
-            displayAlert("Erro ao carregar dados da garagem. Resetando para vazio. Verifique o console.", "error");
-            this.veiculos = []; // Reset on error
-             // Optionally clear the corrupted storage item
-             localStorage.removeItem(this.storageKey);
+             message += " Verifique o console.";
+             displayGlobalAlert(message, "error", 0); // Persistent error
         }
     }
 
-    listarTodosVeiculos() {
-        return this.veiculos;
+    /**
+     * Loads the garage state from LocalStorage. Handles potential errors during parsing or reconstruction.
+     */
+    carregar() {
+        console.log(`Tentando carregar dados da chave: ${this.storageKey}`);
+        const dataString = localStorage.getItem(this.storageKey);
+        if (!dataString) {
+            this.veiculos = [];
+            console.log(`Nenhuma garagem salva encontrada (${this.storageKey}).`);
+            return;
+        }
+
+        try {
+            const dataFromStorage = JSON.parse(dataString);
+
+            // *** CORRECTION: Validate loaded data is an array ***
+            if (!Array.isArray(dataFromStorage)) {
+                 console.error("Dado corrompido encontrado no LocalStorage! Esperado um array.", dataFromStorage);
+                 this.veiculos = [];
+                 try {
+                     localStorage.removeItem(this.storageKey);
+                      displayGlobalAlert("Dados da garagem corrompidos foram removidos. Começando do zero.", "error", 10000);
+                 } catch (removeError) {
+                     console.error("Falha ao remover dados corrompidos:", removeError);
+                     displayGlobalAlert("Dados da garagem corrompidos. Falha ao limpar automaticamente.", "error", 0);
+                 }
+                 return;
+            }
+
+            // Reconstruct vehicles and filter invalid ones
+            const loadedVehicles = dataFromStorage
+                .map(v_data => Vehicle.fromJSON(v_data))
+                .filter(v => v instanceof Vehicle);
+
+            const discardedCount = dataFromStorage.length - loadedVehicles.length;
+            if (discardedCount > 0) {
+                 console.warn(`${discardedCount} itens inválidos foram descartados durante o carregamento.`);
+                 displayGlobalAlert(`${discardedCount} registro(s) de veículo(s) inválido(s) foram ignorados durante o carregamento.`, 'warning', 8000);
+            }
+
+            this.veiculos = loadedVehicles;
+            console.log(`${this.veiculos.length} veículos carregados e validados.`);
+
+        } catch (error) {
+            console.error("Erro CRÍTICO ao carregar/parsear garagem:", error);
+            displayGlobalAlert("Erro grave ao carregar dados. Resetando para vazio.", "error", 0);
+            this.veiculos = [];
+            // Consider clearing storage cautiously
+            // localStorage.removeItem(this.storageKey);
+        }
     }
 
+    /**
+     * Returns a list of all vehicles currently in the garage.
+     * @returns {Array<Vehicle|CarroEsportivo|Caminhao>} An array of vehicle instances.
+     */
+    listarTodosVeiculos() {
+        return [...this.veiculos]; // Return shallow copy
+    }
+
+    /**
+     * Finds all future maintenance appointments across all vehicles.
+     * @returns {Array<{veiculo: Vehicle|CarroEsportivo|Caminhao, manutencao: Manutencao}>} An array of objects containing the vehicle and the future maintenance record, sorted by date ascending.
+     */
     listarAgendamentosFuturos() {
         const agora = new Date();
         const futuros = [];
+
         this.veiculos.forEach(v => {
-            // Check if historicoManutencao exists and is an array
-            if (v.historicoManutencao && Array.isArray(v.historicoManutencao)) {
+            if (v instanceof Vehicle && Array.isArray(v.historicoManutencao)) {
                 v.historicoManutencao.forEach(m => {
-                    // Ensure 'm' is a valid Manutencao object with a data property
                     if (m instanceof Manutencao && m.data) {
                          try {
                             const dataManutencao = new Date(m.data);
-                            // Check if date is valid AND in the future
-                            if (!isNaN(dataManutencao.getTime()) && dataManutencao > agora) {
+                            if (!isNaN(dataManutencao.getTime()) && dataManutencao >= agora) {
                                 futuros.push({ veiculo: v, manutencao: m });
                             }
-                         } catch (dateError){
-                              console.warn("Erro ao processar data de manutenção:", dateError, m);
-                         }
+                         } catch (dateError){ /* Ignore date parsing errors silently */ }
                     }
                 });
             }
         });
-        futuros.sort((a, b) => new Date(a.manutencao.data) - new Date(b.manutencao.data));
+
+        // Sort ascending (soonest first)
+        futuros.sort((a, b) => {
+            const dateA = new Date(a.manutencao.data);
+            const dateB = new Date(b.manutencao.data);
+             if (isNaN(dateA.getTime())) return 1;
+             if (isNaN(dateB.getTime())) return -1;
+             return dateA - dateB;
+        });
         return futuros;
     }
 }
 
-// --- VARIÁVEIS GLOBAIS ---
-let minhaGaragem = new Garagem();
+// --- VARIÁVEIS GLOBAIS E ESTADO DA UI ---
+let minhaGaragem; // Will be initialized in DOMContentLoaded
+let globalStatusTimeout = null;
+let vehicleStatusTimeouts = {};
+let alertadosHoje = new Set();
+
+// Cache DOM elements frequently accessed (will be assigned in DOMContentLoaded)
+let globalStatusDiv, containerCarro, containerCaminhao, agendamentosListContainer,
+    agendamentoModal, formAgendamento, agendamentoTituloVeiculo,
+    agendamentoVeiculoIdInput, agendamentoDataInput, agendamentoTipoInput,
+    agendamentoCustoInput, agendamentoDescricaoInput;
+
 
 // --- FUNÇÕES AUXILIARES UI ---
 
-// Replace basic alert with a more user-friendly notification system if possible
-function displayAlert(message, type = 'info') {
-    console.log(`[${type.toUpperCase()}] ${message}`);
-    // Using alert is intrusive, consider a toast/snackbar library or a dedicated div
-    alert(`[${type.toUpperCase()}] ${message}`);
-    // Example: Update a status div
-    // const statusDiv = document.getElementById('globalStatus');
-    // if (statusDiv) {
-    //     statusDiv.textContent = message;
-    //     statusDiv.className = `status-${type}`; // Add classes for styling
-    //     setTimeout(() => statusDiv.textContent = '', 5000); // Clear after 5s
-    // }
-}
-
-function playSound(elementId) {
-    try {
-        const element = document.getElementById(elementId);
-        if (element && typeof element.play === 'function') {
-            element.currentTime = 0;
-            element.play().catch(e => console.warn(`Audio play failed for ${elementId}:`, e.message));
-        } else {
-             console.warn(`Audio element ${elementId} not found or cannot play.`);
-        }
-    } catch (error) {
-        console.error(`Error playing sound ${elementId}:`, error);
-    }
-}
-
-
-function renderizarGaragem() {
-    const containerCarro = document.getElementById('listaCarros');
-    const containerCaminhao = document.getElementById('listaCaminhoes');
-    const containerAgendamentos = document.getElementById('agendamentosFuturos');
-
-    if (!containerCarro || !containerCaminhao || !containerAgendamentos) {
-        console.error("Um ou mais containers HTML (listaCarros, listaCaminhoes, agendamentosFuturos) não encontrados!");
+/**
+ * Displays a global status message to the user.
+ * @param {string} message The message to display.
+ * @param {'info'|'success'|'warning'|'error'} type The type of message (affects styling).
+ * @param {number} [duration=5000] How long to display the message in ms. 0 for permanent.
+ */
+function displayGlobalAlert(message, type = 'info', duration = 5000) {
+    if (!globalStatusDiv) { // Check if element is cached
+        console.error("Elemento #globalStatus não encontrado!");
+        console.log(`[${type.toUpperCase()}] ${message}`);
+        if (type === 'error' || type === 'warning') alert(`[${type.toUpperCase()}] ${message}`);
         return;
     }
 
-    // Clear existing content
-    containerCarro.innerHTML = '<h2>Carros Esportivos na Garagem</h2>';
-    containerCaminhao.innerHTML = '<h2>Caminhões na Garagem</h2>';
-    containerAgendamentos.innerHTML = '<h2>Agendamentos Futuros</h2><ul></ul>'; // Init with UL
+    clearTimeout(globalStatusTimeout); // Clear previous timeout
 
-    const veiculos = minhaGaragem.listarTodosVeiculos();
+    globalStatusDiv.textContent = message;
+    globalStatusDiv.className = `status-${type}`; // Set type class
+    globalStatusDiv.style.display = 'block'; // Make visible for transition
+    // Force reflow to ensure transition plays
+    void globalStatusDiv.offsetWidth;
+    globalStatusDiv.classList.add('visible'); // Add visible class for transition
+
+    if (duration > 0) {
+        globalStatusTimeout = setTimeout(() => {
+            globalStatusDiv.classList.remove('visible');
+            // Set display to none after transition ends
+            setTimeout(() => {
+                if (!globalStatusDiv.classList.contains('visible')) {
+                     globalStatusDiv.style.display = 'none';
+                     globalStatusDiv.className = ''; // Clear classes
+                }
+            }, 400); // Match CSS transition duration (0.4s)
+             globalStatusTimeout = null;
+        }, duration);
+    }
+}
+
+/**
+ * Plays a sound identified by its HTML element ID.
+ * @param {string} elementId The ID of the <audio> element.
+ */
+function playSound(elementId) {
+    try {
+        const audioElement = document.getElementById(elementId);
+        if (audioElement instanceof HTMLAudioElement && !audioElement.paused) {
+             audioElement.pause(); // Stop if already playing
+             audioElement.currentTime = 0;
+        }
+         if (audioElement instanceof HTMLAudioElement && typeof audioElement.play === 'function') {
+             audioElement.play().catch(e => {
+                 if (e.name !== 'NotAllowedError') { // Ignore common autoplay block error
+                      console.warn(`Não foi possível reproduzir áudio ${elementId}:`, e.message);
+                 }
+             });
+        }
+    } catch (error) {
+        console.error(`Erro ao reproduzir som ${elementId}:`, error);
+    }
+}
+
+/**
+ * Updates the status message area for a specific vehicle card.
+ * @param {string} vehicleId The ID of the vehicle.
+ * @param {string} message The message to display.
+ * @param {'info'|'success'|'warning'|'error'|'turbo'} statusType Type for styling.
+ * @param {number} [duration=4000] Duration in ms.
+ */
+function updateVehicleStatusUI(vehicleId, message, statusType = 'info', duration = 4000) {
+    const statusElement = document.getElementById(`status-${vehicleId}`);
+    if (!statusElement) {
+        console.warn(`Elemento 'status-${vehicleId}' não encontrado. Usando alerta global.`);
+        displayGlobalAlert(`${vehicleId}: ${message}`, statusType, duration);
+        return;
+    }
+
+    clearTimeout(vehicleStatusTimeouts[vehicleId]); // Clear previous timeout for this vehicle
+
+    statusElement.textContent = message;
+    statusElement.dataset.statusType = statusType;
+    statusElement.classList.add('visible');
+
+    vehicleStatusTimeouts[vehicleId] = setTimeout(() => {
+        statusElement.classList.remove('visible');
+         delete vehicleStatusTimeouts[vehicleId];
+    }, duration);
+}
+
+/**
+ * Renders the entire garage display.
+ */
+function renderizarGaragem() {
+    if (!containerCarro || !containerCaminhao || !agendamentosListContainer) {
+        console.error("Erro Fatal: Containers HTML essenciais não encontrados! Renderização abortada.");
+        return;
+    }
+    console.log("Renderizando garagem...");
+
     let carrosHtml = '';
     let caminhoesHtml = '';
+    let carrosCount = 0;
+    let caminhoesCount = 0;
+    const veiculos = minhaGaragem.listarTodosVeiculos();
 
-    if (veiculos.length === 0) {
-        containerCarro.innerHTML += '<p>Nenhum carro esportivo na garagem.</p>';
-        containerCaminhao.innerHTML += '<p>Nenhum caminhão na garagem.</p>';
-    } else {
-        veiculos.forEach(v => {
-            // Basic check if v is a valid vehicle object
-            if (!v || !v.id || typeof v.exibirInformacoes !== 'function' || typeof v.getHistoricoFormatado !== 'function') {
-                console.warn("Item inválido encontrado na lista de veículos:", v);
-                return; // Skip rendering this invalid item
-            }
-
-            const isCarroEsportivo = v instanceof CarroEsportivo;
-            const isCaminhao = v instanceof Caminhao;
-
-            // Determine image path safely
-            let imagePath = 'Imagens/default-vehicle.png'; // Fallback image
-            if (isCarroEsportivo) imagePath = 'Imagens/carro-imagem.webp';
-            else if (isCaminhao) imagePath = 'Imagens/pngtree-red-truck-transport-png-image_11506094.png';
-
-            const veiculoHtml = `
-                <div class="veiculo-item" id="veiculo-${v.id}">
-                    <img src="${imagePath}" alt="${v.modelo || 'Veículo'}" onerror="this.onerror=null; this.src='Imagens/default-vehicle.png';">
-                    <div class="veiculo-info">
-                        <p><strong>${v.modelo || 'Sem Modelo'} (${v.cor || 'Sem Cor'})</strong></p>
-                        <p>Status: ${v.ligado ? 'Ligado' : 'Desligado'} | Velocidade: ${v.velocidade} km/h</p>
-                        ${isCarroEsportivo ? `<p>Turbo: ${v.turboAtivado ? 'Ativado' : 'Desativado'}</p>` : ''}
-                        ${isCaminhao ? `<p>Carga: ${v.cargaAtual} / ${v.capacidadeCarga} kg</p>` : ''}
-                        <p id="status-${v.id}" class="status-veiculo"></p> <!-- Status message area -->
-                    </div>
-                    <div class="button-group-veiculo">
-                        <button onclick="executarAcaoVeiculo('${v.id}', 'ligar')" ${v.ligado ? 'disabled' : ''}>Ligar</button>
-                        <button onclick="executarAcaoVeiculo('${v.id}', 'desligar')" ${!v.ligado ? 'disabled' : ''}>Desligar</button>
-                        <button onclick="executarAcaoVeiculo('${v.id}', 'acelerar')" ${!v.ligado ? 'disabled' : ''}>Acelerar</button>
-                        <button onclick="executarAcaoVeiculo('${v.id}', 'frear')" ${!v.ligado || v.velocidade === 0 ? 'disabled' : ''}>Frear</button>
-                        ${isCarroEsportivo ? `
-                            <button onclick="executarAcaoVeiculo('${v.id}', 'ativarTurbo')" ${!v.ligado || v.turboAtivado ? 'disabled' : ''}>Turbo ON</button>
-                            <button onclick="executarAcaoVeiculo('${v.id}', 'desativarTurbo')" ${!v.turboAtivado ? 'disabled' : ''}>Turbo OFF</button>
-                        ` : ''}
-                        ${isCaminhao ? `
-                            <button onclick="executarAcaoVeiculo('${v.id}', 'carregar', 1000)" ${v.cargaAtual >= v.capacidadeCarga ? 'disabled' : ''}>Carregar 1000</button>
-                            <button onclick="executarAcaoVeiculo('${v.id}', 'descarregar', 500)" ${v.cargaAtual === 0 ? 'disabled' : ''}>Descarregar 500</button>
-                        ` : ''}
-                        <button onclick="mostrarFormAgendamento('${v.id}')">Agendar Manutenção</button>
-                        <button onclick="removerVeiculoDaGaragem('${v.id}')" class="btn-remover">Remover</button>
-                    </div>
-                    <div class="historico-manutencao">
-                        <h4>Histórico de Manutenção:</h4>
-                        <ul>${v.getHistoricoFormatado()}</ul>
-                    </div>
-                </div>
-            `;
-            if (isCarroEsportivo) {
-                carrosHtml += veiculoHtml;
-            } else if (isCaminhao) {
-                caminhoesHtml += veiculoHtml;
-            } else {
-                // Handle generic vehicles or other types if necessary
-                console.warn("Veículo de tipo não renderizado especificamente:", v._tipoVeiculo, v);
-            }
-        });
-
-        containerCarro.innerHTML += carrosHtml || '<p>Nenhum carro esportivo na garagem.</p>';
-        containerCaminhao.innerHTML += caminhoesHtml || '<p>Nenhum caminhão na garagem.</p>';
-    }
-
-    // Renderizar Agendamentos Futuros
-    const agendamentos = minhaGaragem.listarAgendamentosFuturos();
-    const ulAgendamentos = containerAgendamentos.querySelector('ul');
-    if (ulAgendamentos) {
-        if (agendamentos.length > 0) {
-            ulAgendamentos.innerHTML = agendamentos.map(item => {
-                // Check if item and its properties are valid before formatting
-                 if (item && item.veiculo && item.manutencao instanceof Manutencao) {
-                    return `<li>${item.veiculo.modelo || 'Veículo Desconhecido'}: ${item.manutencao.formatar()}</li>`;
-                 }
-                 return ''; // Return empty string for invalid items
-            }).join('');
-        } else {
-            ulAgendamentos.innerHTML = '<li>Nenhum agendamento futuro.</li>';
+    veiculos.forEach(v => {
+        if (!(v instanceof Vehicle) || !v.id) {
+            console.warn("Item inválido na lista de veículos ignorado:", v);
+            return;
         }
-    }
+        const isCarroEsportivo = v instanceof CarroEsportivo;
+        const isCaminhao = v instanceof Caminhao;
+        let imagePath = 'Imagens/default-vehicle.png';
+        if (isCarroEsportivo) imagePath = 'Imagens/carro-imagem.webp';
+        else if (isCaminhao) imagePath = 'Imagens/pngtree-red-truck-transport-png-image_11506094.png';
 
+        const veiculoCardHtml = `
+            <div class="veiculo-item" id="veiculo-${v.id}">
+                <img src="${imagePath}" alt="${v.modelo || 'Veículo'}" loading="lazy" onerror="this.onerror=null; this.src='Imagens/default-vehicle.png';">
+                <div class="veiculo-info">
+                    <p><strong>${v.modelo || 'Sem Modelo'} (${v.cor || 'Sem Cor'})</strong></p>
+                    <p><span class="detail-label">Status:</span> <span class="detail-value">${v.ligado ? 'Ligado' : 'Desligado'}</span></p>
+                    <p><span class="detail-label">Velocidade:</span> <span class="detail-value">${v.velocidade.toFixed(1)} km/h</span></p>
+                    ${isCarroEsportivo ? `<p><span class="detail-label">Turbo:</span> <span class="detail-value">${v.turboAtivado ? 'Ativado' : 'Desativado'}</span></p>` : ''}
+                    ${isCaminhao ? `<p><span class="detail-label">Carga:</span> <span class="detail-value">${v.cargaAtual.toFixed(1)} / ${v.capacidadeCarga.toFixed(1)} kg</span></p>` : ''}
+                </div>
+                <p id="status-${v.id}" class="status-veiculo" data-status-type="info"></p>
+                <div class="button-group-veiculo">
+                    <button class="btn-veiculo-ligar" onclick="executarAcaoVeiculo('${v.id}', 'ligar')" ${v.ligado ? 'disabled' : ''}>Ligar</button>
+                    <button class="btn-veiculo-desligar" onclick="executarAcaoVeiculo('${v.id}', 'desligar')" ${!v.ligado || v.velocidade > 0 ? 'disabled' : ''}>Desligar</button>
+                    <button class="btn-veiculo-acelerar" onclick="executarAcaoVeiculo('${v.id}', 'acelerar')" ${!v.ligado ? 'disabled' : ''}>Acelerar</button>
+                    <button class="btn-veiculo-frear" onclick="executarAcaoVeiculo('${v.id}', 'frear')" ${!v.ligado || v.velocidade === 0 ? 'disabled' : ''}>Frear</button>
+                    ${isCarroEsportivo ? `
+                        <button class="btn-veiculo-turbo-on" onclick="executarAcaoVeiculo('${v.id}', 'ativarTurbo')" ${!v.ligado || v.turboAtivado ? 'disabled' : ''}>Turbo ON</button>
+                        <button class="btn-veiculo-turbo-off" onclick="executarAcaoVeiculo('${v.id}', 'desativarTurbo')" ${!v.turboAtivado || !v.ligado ? 'disabled' : ''}>Turbo OFF</button>
+                    ` : ''}
+                    ${isCaminhao ? `
+                        <button class="btn-veiculo-carregar" onclick="executarAcaoVeiculo('${v.id}', 'carregar')" ${v.cargaAtual >= v.capacidadeCarga ? 'disabled' : ''}>Carregar</button>
+                        <button class="btn-veiculo-descarregar" onclick="executarAcaoVeiculo('${v.id}', 'descarregar')" ${v.cargaAtual === 0 ? 'disabled' : ''}>Descarregar</button>
+                    ` : ''}
+                    <button class="btn-veiculo-agendar" onclick="mostrarFormAgendamento('${v.id}')">Histórico/Agendar</button>
+                    <button class="btn-remover" onclick="removerVeiculoDaGaragem('${v.id}')">Remover</button>
+                </div>
+                <div class="historico-manutencao">
+                    <h4>Histórico de Manutenção:</h4>
+                    <ul>${v.getHistoricoFormatado()}</ul>
+                </div>
+            </div>
+        `;
+        if (isCarroEsportivo) { carrosHtml += veiculoCardHtml; carrosCount++; }
+        else if (isCaminhao) { caminhoesHtml += veiculoCardHtml; caminhoesCount++; }
+    });
 
-    verificarAgendamentosProximos(); // Check for alerts after rendering
-}
+    // Update DOM
+    containerCarro.innerHTML = '<h3>Carros Esportivos</h3>' + (carrosCount > 0 ? carrosHtml : '<p class="empty-list-placeholder">Nenhum carro esportivo na garagem.</p>');
+    containerCaminhao.innerHTML = '<h3>Caminhões</h3>' + (caminhoesCount > 0 ? caminhoesHtml : '<p class="empty-list-placeholder">Nenhum caminhão na garagem.</p>');
 
-
-function updateVehicleStatusUI(vehicleId, message, color = 'black') {
-    const statusElement = document.getElementById(`status-${vehicleId}`);
-    if (statusElement) {
-        statusElement.textContent = message;
-        statusElement.style.color = color;
-        // Clear message after a few seconds for better UX
-        setTimeout(() => {
-            // Check if the message is still the same one we set before clearing
-            if (statusElement.textContent === message) {
-                statusElement.textContent = '';
-                 statusElement.style.color = 'black'; // Reset color
-            }
-        }, 4000); // Clear after 4 seconds
+    // Render Appointments
+    const agendamentos = minhaGaragem.listarAgendamentosFuturos();
+    if (agendamentos.length > 0) {
+        agendamentosListContainer.innerHTML = agendamentos.map(item => {
+             if (item?.veiculo instanceof Vehicle && item?.manutencao instanceof Manutencao) {
+                 let dataFormatada = 'Data inválida';
+                 try { dataFormatada = new Date(item.manutencao.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); } catch(e){}
+                return `<li><strong>${item.veiculo.modelo || 'Veículo'}</strong>: ${item.manutencao.tipo} em ${dataFormatada} (R$ ${item.manutencao.custo.toFixed(2)})</li>`;
+             } return '';
+        }).join('');
     } else {
-        // Fallback to global alert if specific status element not found
-        console.warn(`Elemento de status para ${vehicleId} não encontrado. Exibindo alerta global.`);
-        displayAlert(`Veículo ${vehicleId}: ${message}`, color === 'red' ? 'error' : 'info');
+        agendamentosListContainer.innerHTML = '<li class="empty-list-placeholder">Nenhum agendamento futuro encontrado.</li>';
     }
+    console.log(`Renderização concluída.`);
+    verificarAgendamentosProximos(); // Check alerts after render
 }
-
 
 // --- FUNÇÕES DE AÇÃO DO VEÍCULO ---
 
+/** Creates a new vehicle from form input */
 function criarNovoVeiculo(tipo) {
+    const formIdPrefix = tipo === 'CarroEsportivo' ? 'Esportivo' : 'Caminhao';
+    const modeloInput = document.getElementById(`modelo${formIdPrefix}`);
+    const corInput = document.getElementById(`cor${formIdPrefix}`);
+    const formElement = modeloInput?.closest('.form-adicionar');
     let veiculo;
+
     try {
-        let modelo, cor, capacidade;
+        const modelo = modeloInput?.value.trim();
+        const cor = corInput?.value.trim();
+        if (!modelo) throw new Error(`Modelo é obrigatório.`);
+        if (!cor) throw new Error(`Cor é obrigatória.`);
+
         if (tipo === 'CarroEsportivo') {
-            modelo = document.getElementById('modeloEsportivo').value.trim() || 'Esportivo Padrão';
-            cor = document.getElementById('corEsportivo').value.trim() || 'Preto';
-             if (!modelo || !cor) throw new Error("Modelo e Cor são obrigatórios para Carro Esportivo.");
             veiculo = new CarroEsportivo(modelo, cor);
         } else if (tipo === 'Caminhao') {
-            modelo = document.getElementById('modeloCaminhao').value.trim() || 'Caminhão Padrão';
-            cor = document.getElementById('corCaminhao').value.trim() || 'Branco';
-            capacidade = parseFloat(document.getElementById('capacidadeCaminhao').value) || 5000;
-             if (!modelo || !cor) throw new Error("Modelo e Cor são obrigatórios para Caminhão.");
-             if (isNaN(capacidade) || capacidade < 0) throw new Error("Capacidade de carga inválida.");
+            const capacidadeInput = document.getElementById('capacidadeCaminhao');
+            const capacidadeStr = capacidadeInput?.value;
+            const capacidade = parseFloat(capacidadeStr);
+             if (capacidadeStr === '' || isNaN(capacidade) || capacidade < 0) {
+                throw new Error("Capacidade de carga inválida.");
+             }
             veiculo = new Caminhao(modelo, cor, capacidade);
         } else {
-            throw new Error("Tipo de veículo desconhecido para criação");
+            throw new Error(`Tipo de veículo desconhecido: ${tipo}`);
         }
 
-        // Try adding to garage, check return value
         if (minhaGaragem.adicionarVeiculo(veiculo)) {
-            displayAlert(`${veiculo.modelo} adicionado com sucesso!`, 'success');
-            renderizarGaragem(); // Re-render the garage UI
-
-            // Clear input fields only on success
-            if (tipo === 'CarroEsportivo') {
-                document.getElementById('modeloEsportivo').value = '';
-                document.getElementById('corEsportivo').value = '';
-            } else {
-                document.getElementById('modeloCaminhao').value = '';
-                document.getElementById('corCaminhao').value = '';
-                document.getElementById('capacidadeCaminhao').value = '';
-            }
-        } // If adicionarVeiculo returned false, it already showed a warning
+            displayGlobalAlert(`${veiculo.modelo} (${veiculo._tipoVeiculo}) adicionado!`, 'success');
+            renderizarGaragem();
+            modeloInput.value = ''; // Clear fields on success
+            corInput.value = '';
+            if (tipo === 'Caminhao') document.getElementById('capacidadeCaminhao').value = '10000';
+            formElement?.classList.remove('form-error-highlight');
+        } // Error handled by adicionarVeiculo
 
     } catch (error) {
-        console.error("Erro ao criar veículo:", error);
-        displayAlert(`Erro ao criar veículo: ${error.message}`, 'error');
-    }
-}
-
-function removerVeiculoDaGaragem(idVeiculo) {
-     const veiculo = minhaGaragem.encontrarVeiculoPorId(idVeiculo);
-     const nomeVeiculo = veiculo ? veiculo.modelo : `ID ${idVeiculo}`;
-    // Use confirm for simple cases, or a custom modal for better UX
-    if (confirm(`Tem certeza que deseja remover o veículo ${nomeVeiculo}? Esta ação não pode ser desfeita.`)) {
-         if(minhaGaragem.removerVeiculo(idVeiculo)) {
-            displayAlert(`Veículo ${nomeVeiculo} removido com sucesso.`, 'success');
-            renderizarGaragem(); // Update UI immediately
-         } else {
-            // This case might happen if the vehicle was removed between render and click
-            displayAlert(`Erro: Não foi possível encontrar ou remover o veículo ${nomeVeiculo}.`, 'error');
+        console.error(`Erro ao criar ${tipo}:`, error);
+         displayGlobalAlert(`Erro ao criar ${tipo}: ${error.message}`, 'error');
+         if(formElement) { // Highlight form on error
+             formElement.classList.add('form-error-highlight');
+             formElement.querySelector('input, textarea')?.focus();
+             setTimeout(() => formElement.classList.remove('form-error-highlight'), 3000);
          }
     }
 }
 
+/** Removes a vehicle after confirmation */
+function removerVeiculoDaGaragem(idVeiculo) {
+     const veiculo = minhaGaragem.encontrarVeiculoPorId(idVeiculo);
+     const nomeVeiculo = veiculo ? `${veiculo.modelo} (${veiculo.cor})` : `ID ${idVeiculo}`;
 
-/**
- * Executes an action on a specific vehicle by its ID.
- * This is the corrected version handling default parameters.
- */
+     if (confirm(`Remover ${nomeVeiculo}?\n\nAção irreversível!`)) {
+         if (confirm("CONFIRMAÇÃO FINAL: Apagar este veículo?")) {
+             const veiculoCard = document.getElementById(`veiculo-${idVeiculo}`);
+             if (minhaGaragem.removerVeiculo(idVeiculo)) {
+                 displayGlobalAlert(`Veículo ${nomeVeiculo} removido.`, 'success');
+                 if (veiculoCard) { // Animate removal
+                     veiculoCard.style.transition = 'opacity 0.5s ease, transform 0.5s ease, height 0.5s ease, margin 0.5s ease, padding 0.5s ease';
+                     veiculoCard.style.opacity = '0';
+                     veiculoCard.style.transform = 'scale(0.9)';
+                     veiculoCard.style.height = '0px';
+                     veiculoCard.style.padding = '0';
+                     veiculoCard.style.margin = '0';
+                     setTimeout(() => renderizarGaragem(), 500); // Re-render after animation
+                 } else { renderizarGaragem(); } // Re-render immediately if card not found
+             } else {
+                 displayGlobalAlert(`Erro: Não foi possível remover ${nomeVeiculo}.`, 'error');
+                 renderizarGaragem();
+             }
+         } else { console.log(`Remoção cancelada (confirmação final).`); }
+    } else { console.log(`Remoção cancelada.`); }
+}
+
+
+/** Executes an action on a vehicle */
 function executarAcaoVeiculo(idVeiculo, acao, param = null) {
     const veiculo = minhaGaragem.encontrarVeiculoPorId(idVeiculo);
     if (!veiculo) {
-        displayAlert(`Veículo com ID ${idVeiculo} não encontrado. Pode ter sido removido.`, 'error');
-        renderizarGaragem(); // Re-render to remove potentially stale elements
+        displayGlobalAlert(`Veículo ID ${idVeiculo} não encontrado. Atualizando...`, 'warning', 6000);
+        renderizarGaragem();
         return;
     }
 
-    let message = '';
-    let messageColor = 'black';
-    let soundId = null;
+    let message = '', statusType = 'info', soundId = null, finalParam = param;
 
-    // <<< --- CORE FIX STARTS HERE --- >>>
-    // Determine the actual parameter value to use, providing defaults if necessary.
-    let finalParam = param;
-
-    if (finalParam === null) { // Only set default if no param was explicitly passed by the button's onclick
+    // Determine default parameters ONLY if param is explicitly null
+    if (finalParam === null) {
         switch (acao) {
-            case 'acelerar':
-                finalParam = (veiculo instanceof Caminhao) ? 5 : 10; // Default 5 for truck, 10 for sports car
-                console.log(`[Ação ${acao}] Usando incremento padrão: ${finalParam}`);
-                break;
-            case 'frear':
-                finalParam = (veiculo instanceof Caminhao) ? 2 : 5; // Default 2 for truck, 5 for sports car
-                console.log(`[Ação ${acao}] Usando decremento padrão: ${finalParam}`);
-                break;
-            case 'carregar': // Provide default if button didn't specify
-                 if (veiculo instanceof Caminhao) finalParam = 1000; // Example default
-                 else finalParam = 0; // Cannot load non-trucks
-                 console.log(`[Ação ${acao}] Usando carga padrão: ${finalParam}`);
-                 break;
-            case 'descarregar': // Provide default if button didn't specify
-                 if (veiculo instanceof Caminhao) finalParam = 500; // Example default
-                 else finalParam = 0; // Cannot unload non-trucks
-                 console.log(`[Ação ${acao}] Usando descarga padrão: ${finalParam}`);
-                 break;
-             // Actions like 'ligar', 'desligar', 'ativarTurbo', 'desativarTurbo' don't need a param here
+            case 'acelerar': finalParam = (veiculo instanceof Caminhao) ? 5 : 15; break;
+            case 'frear': finalParam = (veiculo instanceof Caminhao) ? 3 : 10; break;
+            case 'carregar': finalParam = (veiculo instanceof Caminhao) ? 1000 : 0; break;
+            case 'descarregar': finalParam = (veiculo instanceof Caminhao) ? 500 : 0; break;
+        }
+        if (param === null && finalParam !== null && finalParam !== 0) {
+             console.log(`[Ação ${acao}] Valor padrão: ${finalParam}`);
         }
     }
-    // <<< --- CORE FIX ENDS HERE --- >>>
-
 
     try {
-        // Check if the method actually exists on the object
         if (typeof veiculo[acao] === 'function') {
+            message = veiculo[acao](finalParam); // Call method
 
-            // <<< --- CORRECTED CALL --- >>>
-            // Call the method with the determined parameter (could be the original param or the default)
-            // Methods like ligar/desligar will ignore the param if they don't expect one.
-            message = veiculo[acao](finalParam);
-            // <<< --- END CORRECTED CALL --- >>>
-
-            // Assign UI feedback based on action
+            // Determine feedback type/sound
             switch (acao) {
-                case 'ligar':         messageColor = 'green'; soundId = 'somLigar'; break;
-                case 'desligar':      messageColor = 'red'; soundId = 'somDesligar'; break;
-                case 'acelerar':      messageColor = 'blue'; soundId = 'somAcelerar'; break;
-                case 'frear':         messageColor = 'orange'; soundId = 'somFrear'; break;
-                case 'ativarTurbo':   messageColor = 'purple'; soundId = 'somAcelerar'; break; // Reuse accelerate sound?
-                case 'desativarTurbo': messageColor = 'gray'; break;
-                case 'carregar':      messageColor = 'darkgreen'; break; // Give feedback color
-                case 'descarregar':   messageColor = 'darkorange'; break; // Give feedback color
-                 default:             messageColor = 'black'; break;
+                case 'ligar': statusType = 'success'; soundId = 'somLigar'; break;
+                case 'desligar': statusType = message.includes('precisa parar') ? 'warning' : 'success'; if(statusType === 'success') soundId = 'somDesligar'; break;
+                case 'acelerar': statusType = 'info'; soundId = 'somAcelerar'; break;
+                case 'frear': statusType = 'info'; soundId = 'somFrear'; break;
+                case 'ativarTurbo': statusType = 'turbo'; soundId = 'somAcelerar'; break;
+                case 'desativarTurbo': statusType = 'info'; break;
+                case 'carregar': statusType = message.includes('excedida') || message.includes('máxima') ? 'warning' : 'success'; break;
+                case 'descarregar': statusType = 'success'; break;
+                default: statusType = 'info';
             }
-
-             if (soundId) {
-                 playSound(soundId);
+             // Override status if message indicates user error
+             if (message.toLowerCase().includes('inválido') || message.toLowerCase().includes('precisa estar') || message.toLowerCase().includes('não é possível')) {
+                 statusType = 'warning';
              }
-             // Update status immediately for responsiveness before full re-render
-             updateVehicleStatusUI(idVeiculo, message, messageColor);
-             minhaGaragem.salvar(); // Save the new state of the vehicle
-             // Re-render the entire garage to update displayed speed, status, button states, etc.
-             renderizarGaragem();
+
+            if (soundId) playSound(soundId);
+            updateVehicleStatusUI(idVeiculo, message, statusType);
+            minhaGaragem.salvar(); // Save state change
+            renderizarGaragem(); // Update UI completely
 
         } else {
-            message = `Ação '${acao}' é desconhecida ou não aplicável para ${veiculo.modelo}.`;
-            messageColor = 'red';
-            updateVehicleStatusUI(idVeiculo, message, messageColor); // Show error in status
-            console.error(message);
+            message = `Ação '${acao}' desconhecida para ${veiculo.modelo}.`;
+            statusType = 'error';
+            console.error(message, veiculo);
+            updateVehicleStatusUI(idVeiculo, message, statusType, 6000);
         }
     } catch (error) {
-        // Catch errors thrown by the vehicle methods themselves
-        console.error(`Erro ao executar ação '${acao}' no veículo ${idVeiculo} (${veiculo.modelo}):`, error);
-        message = `Erro na ação '${acao}': ${error.message}`;
-        messageColor = 'red';
-        updateVehicleStatusUI(idVeiculo, message, messageColor); // Show error in status
-         // Optionally re-render even on error if state might be inconsistent
-         renderizarGaragem();
+        console.error(`Erro na ação '${acao}' (${idVeiculo}):`, error);
+        message = `Erro em '${acao}': ${error.message || 'Erro desconhecido'}`;
+        statusType = 'error';
+        updateVehicleStatusUI(idVeiculo, message, statusType, 6000);
+        renderizarGaragem(); // Re-render to potentially reset state
     }
 }
 
+// --- FUNÇÕES DE AGENDAMENTO / HISTÓRICO ---
 
-// --- FUNÇÕES DE AGENDAMENTO ---
+/** Clears form validation errors visually */
+ function clearFormErrors(formElement) {
+     if (!formElement) return;
+     formElement.querySelectorAll('.form-group.error').forEach(el => el.classList.remove('error'));
+     formElement.querySelectorAll('.error-message').forEach(el => el.remove());
+ }
 
-const formAgendamento = document.getElementById('formAgendamento');
-const agendamentoModal = document.getElementById('agendamentoModal');
+ /** Shows validation error message for a field */
+ function showFieldError(inputElement, message) {
+     const formGroup = inputElement?.closest('.form-group');
+     if (!formGroup) return;
+     formGroup.querySelector('.error-message')?.remove(); // Remove old one
+     formGroup.classList.add('error');
+     const errorSpan = document.createElement('span');
+     errorSpan.className = 'error-message';
+     errorSpan.setAttribute('role', 'alert');
+     errorSpan.textContent = message;
+     formGroup.querySelector('small')?.after(errorSpan) || inputElement.after(errorSpan);
+ }
 
+/** Displays the maintenance modal */
 function mostrarFormAgendamento(idVeiculo) {
     const veiculo = minhaGaragem.encontrarVeiculoPorId(idVeiculo);
-    if (!veiculo) {
-        displayAlert("Veículo não encontrado para agendamento.", "error");
+    if (!veiculo || !agendamentoModal || !formAgendamento || !agendamentoTituloVeiculo || !agendamentoVeiculoIdInput || !agendamentoDataInput) {
+        displayGlobalAlert("Erro ao abrir formulário de agendamento.", "error");
+        console.error("Veículo ou elementos do modal não encontrados.");
         return;
     }
 
-    document.getElementById('agendamentoVeiculoId').value = idVeiculo;
-    document.getElementById('agendamentoTituloVeiculo').textContent = `Agendar Manutenção para: ${veiculo.modelo} (${veiculo.cor})`;
-    formAgendamento.reset(); // Clear previous form data
+    agendamentoVeiculoIdInput.value = idVeiculo;
+    agendamentoTituloVeiculo.textContent = `Histórico / Agendar: ${veiculo.modelo}`;
+    formAgendamento.reset();
+    clearFormErrors(formAgendamento);
 
-    // Set min date for input to prevent scheduling in the past
+    // Set min/default date
     try {
-        // Format required for datetime-local is YYYY-MM-DDTHH:mm
         const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // Adjust for local timezone
-         now.setSeconds(0); // Optional: zero out seconds
-         now.setMilliseconds(0); // Optional: zero out milliseconds
-        const todayStr = now.toISOString().slice(0, 16); // Get YYYY-MM-DDTHH:mm
-        document.getElementById('agendamentoData').min = todayStr;
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        now.setSeconds(0); now.setMilliseconds(0);
+        const minDateTimeStr = now.toISOString().slice(0, 16);
+        agendamentoDataInput.min = minDateTimeStr;
+        agendamentoDataInput.value = minDateTimeStr; // Default to now
     } catch(e) {
-        console.error("Error setting min date:", e);
-         // Fallback: disable past date selection in a simpler way if ISO fails
-         document.getElementById('agendamentoData').min = new Date().toISOString().split("T")[0];
+        console.error("Erro ao definir data/hora:", e);
+        agendamentoDataInput.min = new Date().toISOString().split("T")[0]; // Fallback min
+        agendamentoDataInput.value = '';
     }
 
+    // TODO: Populate history list in modal if needed
 
-    if (agendamentoModal) {
-        agendamentoModal.style.display = 'block';
-    } else {
-        console.error("Modal de agendamento não encontrado no HTML.");
-        formAgendamento.style.display = 'block'; // Fallback if no modal div
-    }
+    agendamentoModal.style.display = 'block';
+    agendamentoModal.setAttribute('aria-hidden', 'false');
+    agendamentoTipoInput.focus(); // Focus first main field
 }
 
+/** Closes the maintenance modal */
 function fecharFormAgendamento() {
      if (agendamentoModal) {
         agendamentoModal.style.display = 'none';
-    } else {
-        formAgendamento.style.display = 'none';
+        agendamentoModal.setAttribute('aria-hidden', 'true');
     }
-     document.getElementById('agendamentoVeiculoId').value = ''; // Clear hidden field
-     formAgendamento.reset(); // Clear form on close
+    if (formAgendamento) formAgendamento.reset();
+    if (agendamentoVeiculoIdInput) agendamentoVeiculoIdInput.value = '';
+    clearFormErrors(formAgendamento);
 }
 
+/** Handles saving maintenance/appointment */
 function salvarAgendamento(event) {
-    event.preventDefault(); // Prevent default form submission which reloads page
+    event.preventDefault();
+    clearFormErrors(formAgendamento);
 
-    const veiculoId = document.getElementById('agendamentoVeiculoId').value;
-    const data = document.getElementById('agendamentoData').value; // Format YYYY-MM-DDTHH:mm
-    const tipo = document.getElementById('agendamentoTipo').value.trim();
-    const custo = document.getElementById('agendamentoCusto').value; // String initially
-    const descricao = document.getElementById('agendamentoDescricao').value.trim();
-
+    const veiculoId = agendamentoVeiculoIdInput.value;
+    const data = agendamentoDataInput.value;
+    const tipo = agendamentoTipoInput.value.trim();
+    const custoStr = agendamentoCustoInput.value;
+    const descricao = agendamentoDescricaoInput.value.trim();
     const veiculo = minhaGaragem.encontrarVeiculoPorId(veiculoId);
 
     if (!veiculo) {
-        displayAlert("Erro Crítico: Veículo selecionado para agendamento não existe mais.", "error");
-        fecharFormAgendamento();
+        displayGlobalAlert("Erro Crítico: Veículo não existe mais!", "error", 8000);
+        fecharFormAgendamento(); renderizarGaragem(); return;
+    }
+
+    // Validation
+    let isValid = true;
+    if (!data) { showFieldError(agendamentoDataInput, "Data e Hora obrigatórios."); isValid = false; }
+    else { try { if (isNaN(new Date(data).getTime())) { showFieldError(agendamentoDataInput, "Formato inválido."); isValid = false; }} catch (e) { showFieldError(agendamentoDataInput, "Erro data."); isValid = false; }}
+    if (!tipo) { showFieldError(agendamentoTipoInput, "Tipo obrigatório."); isValid = false; }
+    const custoNum = parseFloat(custoStr);
+    if (custoStr === '' || isNaN(custoNum) || custoNum < 0) { showFieldError(agendamentoCustoInput, "Custo obrigatório (0+)."); isValid = false; }
+
+    if (!isValid) {
+         displayGlobalAlert("Corrija os erros no formulário.", "warning");
+         formAgendamento.querySelector('.form-group.error input, .form-group.error textarea')?.focus();
         return;
     }
 
-    // --- Client-side Validation ---
-    let errors = [];
-    if (!data) errors.push("Data e Hora são obrigatórios.");
-    if (!tipo) errors.push("Tipo de Serviço é obrigatório.");
-    if (custo === '' || isNaN(parseFloat(custo)) || parseFloat(custo) < 0) {
-         errors.push("Custo é obrigatório e deve ser um número positivo ou zero.");
-    }
-     // Optional: Check if date is in the past (although 'min' attribute helps)
-     try {
-        if (new Date(data) < new Date()) {
-            // Allow saving past maintenance (as records), but maybe warn if it's far past?
-            // Or strictly enforce future dates for 'scheduling'
-            // For now, allow past dates as records of completed work.
-            // console.warn("Data da manutenção está no passado.");
-        }
-     } catch(e){ errors.push("Formato de Data inválido.");}
-
-
-    if (errors.length > 0) {
-        displayAlert("Erro no formulário:\n- " + errors.join("\n- "), "error");
-        return; // Stop processing
-    }
-    // --- End Validation ---
-
     try {
-        // Create Manutencao object - Constructor now handles internal validation
-        const novaManutencao = new Manutencao(data, tipo, parseFloat(custo), descricao, veiculoId);
-
-        // Add to vehicle history using the vehicle's method
+        const novaManutencao = new Manutencao(data, tipo, custoNum, descricao, veiculoId);
         if (veiculo.adicionarManutencao(novaManutencao)) {
-             minhaGaragem.salvar(); // Save the updated garage data (with new maintenance)
-             renderizarGaragem(); // Update the UI (shows new history/schedule)
-             fecharFormAgendamento(); // Close the form/modal
-             displayAlert("Manutenção agendada/registrada com sucesso!", "success");
-        } else {
-             // This case should be rare now if Manutencao constructor succeeds
-             displayAlert("Falha desconhecida ao adicionar manutenção ao histórico.", "error");
-        }
-
+             minhaGaragem.salvar();
+             renderizarGaragem();
+             fecharFormAgendamento();
+             displayGlobalAlert("Registro salvo!", "success");
+        } else { displayGlobalAlert("Falha ao adicionar registro.", "error"); }
     } catch (error) {
-        // Catch errors from Manutencao constructor (e.g., invalid data format)
-        console.error("Erro ao criar ou agendar manutenção:", error);
-        displayAlert(`Erro no agendamento: ${error.message}`, "error");
-        // Keep the form open so user can correct the error
+        console.error("Erro ao salvar registro:", error);
+        displayGlobalAlert(`Erro: ${error.message || 'Verifique os dados.'}`, "error", 7000);
     }
 }
 
-// --- VERIFICAÇÃO DE AGENDAMENTOS ---
-let alertadosHoje = new Set(); // Track alerts shown today to avoid repetition
+// --- VERIFICAÇÃO DE AGENDAMENTOS PRÓXIMOS ---
 
+/** Checks and alerts for upcoming appointments */
 function verificarAgendamentosProximos() {
-    const agendamentos = minhaGaragem.listarAgendamentosFuturos();
+    if (minhaGaragem.listarTodosVeiculos().length === 0 || !globalStatusDiv) return;
+
+    const agendamentosFuturos = minhaGaragem.listarAgendamentosFuturos();
+    if (agendamentosFuturos.length === 0) return;
+
     const agora = new Date();
-    const amanha = new Date();
-    amanha.setDate(agora.getDate() + 1);
-    amanha.setHours(23, 59, 59, 999); // End of tomorrow
+    const amanhaFimDoDia = new Date(agora); // Clone 'agora'
+    amanhaFimDoDia.setDate(agora.getDate() + 1);
+    amanhaFimDoDia.setHours(23, 59, 59, 999);
+    const hojeStr = agora.toDateString();
 
-    const hojeStr = agora.toDateString(); // Get "Mon Apr 01 2024" format
-
-    // Clear alerts from previous days if necessary
+    // Reset daily alert tracking if needed
     if (!alertadosHoje.has(hojeStr)) {
+        console.log("Novo dia, resetando alertas diários.");
         alertadosHoje.clear();
-        alertadosHoje.add(hojeStr); // Mark today as having checked alerts
+        alertadosHoje.add(hojeStr);
     }
 
-    agendamentos.forEach(item => {
-         if (!item || !item.manutencao || !item.manutencao.id) return; // Skip invalid items
-
-        const manutId = item.manutencao.id;
-         if (alertadosHoje.has(manutId)) return; // Skip if already alerted today
+    let alertsShownThisCheck = 0;
+    agendamentosFuturos.forEach(item => {
+         if (!(item?.manutencao instanceof Manutencao) || !item.manutencao.id || !(item?.veiculo instanceof Vehicle)) return;
+         const manutId = item.manutencao.id;
+         if (alertadosHoje.has(manutId)) return; // Skip if alerted today
 
         try {
             const dataManutencao = new Date(item.manutencao.data);
             if (isNaN(dataManutencao.getTime())) return; // Skip invalid dates
 
-            // Check if appointment is today or tomorrow
-            if (dataManutencao > agora && dataManutencao <= amanha) {
-                 const dataFormatada = dataManutencao.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                 const diaFormatado = dataManutencao.toDateString() === agora.toDateString() ? "hoje" : "amanhã";
-
-                 displayAlert(`Lembrete: ${item.veiculo.modelo} - ${item.manutencao.tipo} agendado para ${diaFormatado} às ${dataFormatada}!`, 'warning');
-                 alertadosHoje.add(manutId); // Mark this specific alert as shown today
+            if (dataManutencao >= agora && dataManutencao <= amanhaFimDoDia) {
+                 const dataHoraFormatada = dataManutencao.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short'});
+                 const diaFormatado = dataManutencao.toDateString() === hojeStr ? "HOJE" : "Amanhã";
+                 displayGlobalAlert(
+                     `Lembrete (${diaFormatado}): ${item.veiculo.modelo} - "${item.manutencao.tipo}" às ${dataHoraFormatada}!`,
+                     'warning', 15000
+                 );
+                 alertadosHoje.add(manutId); // Mark alerted
+                 alertsShownThisCheck++;
             }
-            // Add more conditions (e.g., next week) if needed
-        } catch (e) {
-             console.warn("Erro ao processar data de agendamento para alerta:", e, item);
-        }
+        } catch (e) { /* Ignore date processing errors silently */ }
     });
+     // if(alertsShownThisCheck > 0) console.log(`${alertsShownThisCheck} alertas exibidos.`);
 }
 
-
-// --- EVENT LISTENERS ---
+// --- EVENT LISTENERS E INICIALIZAÇÃO ---
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM Carregado. Inicializando Garagem...");
-    // Load garage data from LocalStorage first
-    minhaGaragem.carregar();
+    console.log("DOM Carregado. Inicializando Garagem v3.1...");
 
-    // Initial rendering of the garage UI based on loaded data
-    renderizarGaragem();
+    // --- Cache DOM Elements ---
+    globalStatusDiv = document.getElementById('globalStatus');
+    containerCarro = document.getElementById('listaCarros');
+    containerCaminhao = document.getElementById('listaCaminhoes');
+    agendamentosListContainer = document.getElementById('agendamentosFuturosLista');
+    agendamentoModal = document.getElementById('agendamentoModal');
+    formAgendamento = document.getElementById('formAgendamento');
+    agendamentoTituloVeiculo = document.getElementById('agendamentoTituloVeiculo');
+    agendamentoVeiculoIdInput = document.getElementById('agendamentoVeiculoId');
+    agendamentoDataInput = document.getElementById('agendamentoData');
+    agendamentoTipoInput = document.getElementById('agendamentoTipo');
+    agendamentoCustoInput = document.getElementById('agendamentoCusto');
+    agendamentoDescricaoInput = document.getElementById('agendamentoDescricao');
 
-    // --- Botões de Criação ---
-    const criarCarroBtn = document.getElementById('criarCarroEsportivoBtn');
-    const criarCaminhaoBtn = document.getElementById('criarCaminhaoBtn');
+    // --- Initialize Garage ---
+    minhaGaragem = new Garagem(); // Initialize the garage instance
+    try {
+        minhaGaragem.carregar();
+    } catch (e) {
+         console.error("Erro Fatal no carregamento inicial:", e);
+         displayGlobalAlert("ERRO GRAVE AO CARREGAR DADOS. Verifique console.", "error", 0);
+    }
 
-    if (criarCarroBtn) {
-        criarCarroBtn.addEventListener('click', () => criarNovoVeiculo('CarroEsportivo'));
-    } else console.error("Botão criarCarroEsportivoBtn não encontrado.");
+    // --- Initial Render ---
+    try {
+        renderizarGaragem();
+    } catch (renderError) {
+         console.error("Erro Fatal na renderização inicial:", renderError);
+         displayGlobalAlert("ERRO GRAVE AO EXIBIR GARAGEM.", "error", 0);
+    }
 
-    if (criarCaminhaoBtn) {
-        criarCaminhaoBtn.addEventListener('click', () => criarNovoVeiculo('Caminhao'));
-    } else console.error("Botão criarCaminhaoBtn não encontrado.");
+    // --- Setup Event Listeners ---
+    document.getElementById('criarCarroEsportivoBtn')?.addEventListener('click', () => criarNovoVeiculo('CarroEsportivo'));
+    document.getElementById('criarCaminhaoBtn')?.addEventListener('click', () => criarNovoVeiculo('Caminhao'));
 
-
-     // --- Formulário de Agendamento ---
     if (formAgendamento) {
         formAgendamento.addEventListener('submit', salvarAgendamento);
-    } else console.error("Formulário formAgendamento não encontrado.");
+        formAgendamento.querySelector('button[type="button"].btn-secondary')?.addEventListener('click', fecharFormAgendamento);
+    }
 
-    // Close button/icon for the modal
-    const closeBtn = document.querySelector('.modal .close-button');
-     if (closeBtn) {
-         closeBtn.addEventListener('click', fecharFormAgendamento);
-     } else console.warn("Botão de fechar do modal (.close-button) não encontrado.");
+    if (agendamentoModal) {
+         agendamentoModal.querySelector('.close-button')?.addEventListener('click', fecharFormAgendamento);
+         agendamentoModal.addEventListener('click', (event) => { if (event.target === agendamentoModal) fecharFormAgendamento(); });
+    }
+     document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && agendamentoModal?.style.display === 'block') fecharFormAgendamento(); });
 
-     // Close modal if clicking outside the form content
-     if (agendamentoModal) {
-        agendamentoModal.addEventListener('click', (event) => {
-             // Check if the click was directly on the modal background (event.target)
-             // and not on its children (modal-content or elements inside it)
-            if (event.target === agendamentoModal) {
-                fecharFormAgendamento();
-            }
-        });
-     } else console.error("Elemento do modal agendamentoModal não encontrado.");
+    document.getElementById('limparStorageBtn')?.addEventListener('click', () => {
+        if (confirm("ATENÇÃO!\nLimpar TODOS os dados salvos?\nAÇÃO IRREVERSÍVEL!")) {
+             if (confirm("CONFIRMAÇÃO FINAL: Apagar TUDO?")) {
+                 try {
+                     localStorage.removeItem(minhaGaragem.storageKey);
+                     minhaGaragem = new Garagem(); // Re-initialize empty
+                     alertadosHoje.clear(); vehicleStatusTimeouts = {};
+                     renderizarGaragem();
+                     displayGlobalAlert("Dados limpos.", "info");
+                     console.log(`LocalStorage (${minhaGaragem.storageKey}) limpo.`);
+                 } catch(e) { console.error("Erro ao limpar LocalStorage:", e); displayGlobalAlert("Erro ao limpar dados.", "error"); }
+             } else { console.log("Limpeza cancelada."); }
+        } else { console.log("Limpeza cancelada."); }
+    });
 
+    // --- Periodic Check ---
+    const checkIntervalMinutes = 5;
+    setInterval(verificarAgendamentosProximos, checkIntervalMinutes * 60 * 1000);
+    console.log(`Verificação periódica de agendamentos ativa (intervalo: ${checkIntervalMinutes} min).`);
 
-    // --- Limpar LocalStorage (para testes) ---
-    const limparStorageBtn = document.getElementById('limparStorageBtn');
-    if (limparStorageBtn) {
-        limparStorageBtn.addEventListener('click', () => {
-            if (confirm("ATENÇÃO!\nTem certeza que deseja limpar TODOS os dados salvos da garagem?\nEsta ação é irreversível.")) {
-                try {
-                    localStorage.removeItem(minhaGaragem.storageKey);
-                    minhaGaragem.veiculos = []; // Clear in-memory array too
-                    alertadosHoje.clear(); // Reset alerts tracking
-                    renderizarGaragem(); // Update UI to show empty garage
-                    displayAlert("Dados da garagem limpos com sucesso.", "info");
-                     console.log("LocalStorage limpo.");
-                } catch(e) {
-                    console.error("Erro ao limpar LocalStorage:", e);
-                    displayAlert("Erro ao tentar limpar os dados.", "error");
-                }
-            }
-        });
-    } else console.warn("Botão limparStorageBtn não encontrado.");
-
-    // Set interval to check for upcoming appointments periodically (e.g., every 5 minutes)
-     setInterval(verificarAgendamentosProximos, 5 * 60 * 1000); // 5 minutes in milliseconds
-
-    console.log("Inicialização da Garagem concluída.");
+    console.log("Inicialização Garagem v3.1 concluída.");
+    displayGlobalAlert("Garagem pronta!", "success", 3000);
 });

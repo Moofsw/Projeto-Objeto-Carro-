@@ -1,4 +1,4 @@
-/* style.css - v3 Enhanced Visuals */
+/* style.css - v3.1 Enhanced Visuals */
 
 /* --- CSS Variables (Theme Colors & Settings) --- */
 :root {
@@ -26,6 +26,14 @@
   --border-radius-lg: 12px;
   --font-family-base: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --transition-base: all 0.25s ease-in-out;
+  --danger-light: #f8d7da;
+  --danger-dark: #721c24;
+  --warning-light: #fff3cd;
+  --warning-dark: #856404;
+  --success-light: #d4edda;
+  --success-dark: #155724;
+  --info-light: #d1ecf1;
+  --info-dark: #0c5460;
 }
 
 /* --- Base & Reset --- */
@@ -72,6 +80,13 @@ h1 {
   padding-bottom: 0.6em;
   font-weight: 800;
 }
+h1 span { /* Version number style */
+    font-size: 0.5em;
+    font-weight: 400;
+    color: var(--text-muted);
+    vertical-align: middle;
+    margin-left: 10px;
+}
 h2 { /* Section Titles */
   font-size: 2em;
   margin-top: 2.5em;
@@ -100,6 +115,18 @@ p {
   margin-bottom: 1em;
   color: #555; /* Slightly softer paragraph text */
 }
+small { /* General small text */
+    font-size: 0.9em;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 0.4em;
+}
+/* Specific warning small text */
+small.danger-warning {
+    color: var(--danger-dark);
+    font-weight: bold;
+}
+
 
 /* --- Sections & HR --- */
 section {
@@ -115,6 +142,13 @@ hr {
   height: 1px;
   background-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.1), transparent);
   margin: 60px 0;
+}
+hr.section-divider { /* Optional specific style for dividers between car/truck lists */
+    margin: 40px 0;
+    background-image: none;
+    background-color: #eee;
+    border: none;
+    height: 1px;
 }
 
 /* --- Forms --- */
@@ -144,6 +178,7 @@ hr {
 }
 .form-group {
   margin-bottom: 1.5em;
+  position: relative; /* Needed for absolute positioning of error messages */
 }
 label {
   display: block;
@@ -187,12 +222,45 @@ textarea {
   resize: vertical;
   min-height: 100px;
 }
-.form-group small {
-  font-size: 0.9em;
-  color: var(--text-muted);
+
+
+/* Input field error state */
+.form-group.error input[type="text"],
+.form-group.error input[type="number"],
+.form-group.error input[type="date"],
+.form-group.error input[type="datetime-local"],
+.form-group.error textarea {
+  border-color: var(--danger-color);
+  background-color: #fffafa; /* Slightly pink background for error */
+}
+.form-group.error input:focus,
+.form-group.error textarea:focus {
+   box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25); /* Red focus glow */
+}
+
+/* Error message styling */
+.error-message {
+  color: var(--danger-darker);
+  font-size: 0.85em;
+  font-weight: 500;
   display: block;
   margin-top: 0.4em;
+  padding: 3px 6px;
+  /* background-color: var(--danger-light); Optional background */
+  border-radius: 4px;
 }
+
+/* Highlight form on error (added via JS) */
+.form-adicionar.form-error-highlight {
+  border: 2px dashed var(--danger-color);
+  animation: shake 0.5s ease-in-out;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+
 
 /* --- Buttons --- */
 button {
@@ -312,12 +380,6 @@ button:disabled {
 }
 
 /* --- Vehicle Item Card --- */
-#listaCarros h3, #listaCaminhoes h3 { /* Titles for Car/Truck lists */
-  font-size: 1.4em;
-  color: var(--secondary-darker);
-  margin-bottom: 1em;
-  margin-top: 0; /* Remove top margin if it's first in section */
-}
 .veiculo-item {
   border: 1px solid var(--light-border);
   padding: 30px;
@@ -330,8 +392,8 @@ button:disabled {
   grid-template-rows: auto auto auto 1fr; /* Info, Status, Buttons, History */
   gap: 15px 30px; /* Row gap, Column gap */
   align-items: start;
-  transition: var(--transition-base);
-  overflow: hidden; /* Prevent content overflow */
+  transition: all 0.3s ease-in-out; /* General transition */
+  overflow: hidden; /* Needed for height transition on removal */
 }
 .veiculo-item:hover {
   box-shadow: var(--card-hover-shadow);
@@ -363,7 +425,11 @@ button:disabled {
   margin: 0 0 0.6em 0;
   font-size: 1em;
   color: #444;
+  line-height: 1.5; /* Improve readability */
 }
+/* Add spacing for detail labels/values */
+.veiculo-info p { margin-bottom: 0.8em; }
+
 .veiculo-item p strong { /* Model */
   font-size: 1.4em;
   font-weight: 700;
@@ -371,49 +437,60 @@ button:disabled {
   display: block;
   margin-bottom: 0.4em;
 }
-/* Specific details styling */
-.veiculo-item .detail-label {
+
+.detail-label {
   font-weight: 600;
   color: var(--text-muted);
   margin-right: 5px;
+  display: inline-block; /* Ensure proper spacing */
+  min-width: 80px; /* Align values slightly */
 }
-.veiculo-item .detail-value {
+.detail-value {
   font-weight: 500;
   color: var(--dark-color);
 }
 
-.status-veiculo { /* Status Badge */
+
+/* Status Message Styling (Inside Vehicle Card) */
+.status-veiculo {
   grid-column: 2;
-  grid-row: 2;
-  font-style: normal; /* Remove italic */
-  color: var(--dark-color);
-  min-height: auto; /* Remove min-height */
-  margin-top: 5px !important;
-  font-size: 0.85em;
+  grid-row: 2; /* Position below main info */
+  font-style: normal;
+  color: var(--dark-color); /* Default text color */
+  margin-top: 5px !important; /* Override other margins */
+  margin-bottom: 10px !important;
+  font-size: 0.9em; /* Slightly larger */
   font-weight: 600;
-  padding: 6px 12px; /* Badge padding */
-  border-radius: 15px; /* Pill shape */
-  display: inline-block;
+  padding: 8px 15px; /* More padding */
+  border-radius: var(--border-radius-base); /* Standard radius */
+  border: 1px solid transparent; /* Base border */
+  display: inline-block; /* Allow transitions */
   max-width: 100%;
   text-align: center;
-  transition: var(--transition-base);
-  opacity: 0; /* Hidden by default, fade in */
-  transform: translateY(5px);
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  opacity: 0; /* Hidden by default */
+  transform: translateY(10px); /* Start slightly lower */
+  visibility: hidden; /* Hide from layout when opacity is 0 */
+  min-height: 1.5em; /* Prevent layout jumps when message appears/disappears */
 }
-.status-veiculo.visible { /* Add this class via JS when message appears */
+
+.status-veiculo.visible { /* Class added by JS to show */
   opacity: 1;
   transform: translateY(0);
+  visibility: visible;
 }
-/* Badge colors */
-.status-veiculo[data-status-type="info"] { background-color: #e7f3ff; color: #004085; border: 1px solid #b8daff; }
-.status-veiculo[data-status-type="success"] { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-.status-veiculo[data-status-type="warning"] { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-.status-veiculo[data-status-type="error"] { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-.status-veiculo[data-status-type="turbo"] { background-color: #e2d9f3; color: #4b3275; border: 1px solid #d1c4e9; }
+
+/* Color variations using data attributes */
+.status-veiculo[data-status-type="info"] { background-color: var(--info-light); color: var(--info-dark); border-color: #bee5eb; }
+.status-veiculo[data-status-type="success"] { background-color: var(--success-light); color: var(--success-dark); border-color: #c3e6cb; }
+.status-veiculo[data-status-type="warning"] { background-color: var(--warning-light); color: var(--warning-dark); border-color: #ffeeba; }
+.status-veiculo[data-status-type="error"] { background-color: var(--danger-light); color: var(--danger-dark); border-color: #f5c6cb; }
+.status-veiculo[data-status-type="turbo"] { background-color: #e2d9f3; color: #4b3275; border-color: #d1c4e9; } /* Custom purple for turbo */
 
 
+/* History List Styling */
 .historico-manutencao {
-  grid-column: 1 / -1;
+  grid-column: 1 / -1; /* Span both columns */
   grid-row: 4;
   margin-top: 25px;
   border-top: 1px solid var(--light-border);
@@ -448,6 +525,18 @@ button:disabled {
 .historico-manutencao li:last-child {
   border-bottom: none; margin-bottom: 0; padding-bottom: 0;
 }
+/* Style for empty history message */
+.historico-manutencao li.empty-history {
+   color: var(--text-muted);
+   font-style: italic;
+   border-bottom: none;
+   text-align: center;
+}
+.historico-manutencao li.empty-history.error {
+    color: var(--danger-dark);
+    font-style: normal;
+    font-weight: bold;
+}
 
 /* --- Modal --- */
 .modal {
@@ -472,17 +561,27 @@ button:disabled {
   position: relative;
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
   animation: scaleInModal 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); /* Scale animation */
+  max-height: 90vh; /* Prevent modal from being taller than viewport */
+  overflow-y: auto; /* Add scroll within modal if needed */
 }
 @keyframes scaleInModal {
   from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: scale(1); }
 }
-.modal-content h3 {
+.modal-content h3 { /* Modal Title */
   margin-top: 0;
   margin-bottom: 1.8em;
   text-align: center;
   color: var(--primary-color);
   font-size: 1.8em;
+}
+.modal-content h4 { /* Form Sub-Title */
+    margin-top: 1em;
+    margin-bottom: 1.2em;
+    font-size: 1.2em;
+    color: var(--secondary-darker);
+    text-align: left;
+    border: none; /* Remove border from h4 inside modal */
 }
 .close-button {
   color: #aaa;
@@ -500,6 +599,21 @@ button:disabled {
   color: var(--danger-color); /* Red close on hover */
   transform: rotate(90deg); /* Rotate on hover */
 }
+/* Style the modal form groups similar to page forms */
+#formAgendamento .form-group {
+   margin-bottom: 1.2em;
+}
+#formAgendamento label {
+    font-size: 0.95em;
+    margin-bottom: 0.5em;
+}
+#formAgendamento input, #formAgendamento textarea {
+    padding: 12px 15px;
+    font-size: 1em;
+}
+#formAgendamento small {
+    font-size: 0.85em;
+}
 #formAgendamento .button-group {
   text-align: right; margin-top: 30px;
 }
@@ -508,27 +622,58 @@ button:disabled {
 }
 
 /* --- Appointments List --- */
-#agendamentosFuturos ul {
+#agendamentosFuturosLista {
   list-style: none;
   padding: 0;
   margin-top: 1em;
 }
-#agendamentosFuturos li {
-  background-color: #fff9e0; /* Softer yellow */
+#agendamentosFuturosLista li {
+  background-color: var(--info-light); /* Use Info color for upcoming */
   padding: 15px 20px;
   margin-bottom: 12px;
-  border-left: 6px solid var(--warning-color);
+  border-left: 6px solid var(--info-color); /* Match border */
   border-radius: var(--border-radius-base);
   font-size: 1em;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
-  color: #665c24; /* Darker text for yellow */
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+  color: var(--info-dark); /* Match text color */
   transition: var(--transition-base);
 }
-#agendamentosFuturos li:hover {
-  background-color: #fffcec;
-  border-left-color: var(--warning-darker);
+#agendamentosFuturosLista li:hover {
+  background-color: #e1f5fe; /* Lighter hover */
+  border-left-color: var(--info-darker);
   box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+  transform: translateX(3px);
 }
+#agendamentosFuturosLista li strong { /* Highlight vehicle name */
+    font-weight: 700;
+    color: var(--info-darker);
+}
+/* Style for empty appointments message */
+#agendamentosFuturosLista li.empty-list-placeholder {
+   background-color: var(--light-color);
+   border-left-color: var(--light-border);
+   color: var(--text-muted);
+   font-style: italic;
+   box-shadow: none;
+   text-align: center;
+}
+#agendamentosFuturosLista li:only-child.empty-list-placeholder {
+    /* Specific style if it's the *only* item */
+    margin-bottom: 0;
+}
+
+/* Placeholder for empty vehicle lists */
+.empty-list-placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+    margin-top: 10px;
+    background-color: var(--light-color);
+    border-radius: var(--border-radius-base);
+    border: 1px dashed var(--light-border);
+}
+
 
 /* --- Global Status Area --- */
 #globalStatus {
@@ -536,18 +681,29 @@ button:disabled {
   margin: 0 auto 30px auto;
   border-radius: var(--border-radius-base);
   text-align: center;
-  font-weight: 500;
-  display: none; /* Controlled by JS */
-  width: 90%;
-  max-width: 850px;
+  font-weight: 600; /* Make text bolder */
+  width: 95%;
+  max-width: 900px; /* Slightly wider */
   border: 1px solid transparent; /* Base border */
   font-size: 1.05em;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1); /* Add subtle shadow */
+  transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+  opacity: 0;
+  transform: translateY(-20px);
+  display: none; /* Start hidden, JS controls display block/none */
+  visibility: hidden; /* Double safety */
 }
-/* Use classes for styling */
-#globalStatus.status-info { background-color: #e1f5fe; color: #01579b; border-color: #b3e5fc; display: block; }
-#globalStatus.status-success { background-color: #e8f5e9; color: #1b5e20; border-color: #c8e6c9; display: block; }
-#globalStatus.status-warning { background-color: #fffde7; color: #f57f17; border-color: #fff9c4; display: block; }
-#globalStatus.status-error { background-color: #ffebee; color: #b71c1c; border-color: #ffcdd2; display: block; }
+#globalStatus.visible { /* Class added by JS */
+    display: block; /* Make it take space */
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+}
+/* Color variations using classes */
+#globalStatus.status-info { background-color: var(--info-light); color: var(--info-dark); border-color: #bee5eb; }
+#globalStatus.status-success { background-color: var(--success-light); color: var(--success-dark); border-color: #c3e6cb; }
+#globalStatus.status-warning { background-color: var(--warning-light); color: var(--warning-dark); border-color: #ffeeba; }
+#globalStatus.status-error { background-color: var(--danger-light); color: var(--danger-dark); border-color: #f5c6cb; }
 
 
 /* --- Responsive --- */
@@ -566,20 +722,20 @@ button:disabled {
 @media (max-width: 768px) {
   .container { margin: 20px auto; border-radius: 0; }
   .veiculo-item {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto auto auto auto auto;
+      grid-template-columns: 1fr; /* Single column layout */
+      grid-template-rows: auto auto auto auto auto; /* Image, Info, Status, Buttons, History */
       gap: 20px 0;
       padding: 20px;
       box-shadow: var(--card-shadow); /* Keep shadow */
   }
    .veiculo-item img {
       grid-row: 1; grid-column: 1;
-      max-width: 200px; margin: 0 auto 20px auto;
+      max-width: 200px; margin: 0 auto 20px auto; /* Center image */
       align-self: center; border: 1px solid #eee;
   }
-  .veiculo-info { grid-row: 2; text-align: center; }
-  .status-veiculo { grid-row: 3; margin: 10px auto; }
-  .button-group-veiculo { grid-row: 4; justify-content: center; gap: 8px; margin-top: 10px; }
+  .veiculo-info { grid-row: 2; text-align: center; } /* Center info */
+  .status-veiculo { grid-row: 3; margin: 10px auto; } /* Center status */
+  .button-group-veiculo { grid-row: 4; justify-content: center; gap: 8px; margin-top: 10px; } /* Center buttons */
   .historico-manutencao { grid-row: 5; margin-top: 25px; padding-top: 20px; }
   .button-group-veiculo button { font-size: 0.85em; padding: 8px 12px;}
 
@@ -598,8 +754,16 @@ button:disabled {
   .veiculo-item img { max-width: 160px; }
   .button-group-veiculo button { font-size: 0.8em; padding: 7px 10px;}
   .historico-manutencao ul { font-size: 0.88em;}
-  #agendamentosFuturos li { padding: 12px 15px; font-size: 0.9em;}
+  #agendamentosFuturosLista li { padding: 12px 15px; font-size: 0.9em;}
   .modal-content { margin: 5% auto; padding: 25px; }
   input, textarea, label { font-size: 1em; } /* Keep inputs readable */
   section { padding: 20px; }
+}
+@media (max-width: 400px) {
+    body { font-size: 13px; }
+    .container { padding: 10px; }
+    h1 { font-size: 1.8em; }
+    .veiculo-item { padding: 15px; }
+    .button-group-veiculo button { font-size: 0.75em; padding: 6px 8px;}
+    #globalStatus { font-size: 0.95em; padding: 12px 18px;}
 }
