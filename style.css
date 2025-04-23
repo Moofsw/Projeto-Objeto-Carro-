@@ -411,7 +411,7 @@ button:disabled {
   background-color: #f8f9fa; /* BG for image area */
   padding: 5px; /* Padding around image */
 }
-.veiculo-item img[src$="default-vehicle.png"] {
+.veiculo-item img[src$="Imagens/default-vehicle.png"] {
   opacity: 0.4;
   border: 1px dashed #ccc;
   padding: 15px; /* More padding for default */
