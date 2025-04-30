@@ -1,4 +1,4 @@
-/* style.css - v3.1 Enhanced Visuals */
+/* style.css - v3.1 Enhanced Visuals + API styles */
 
 /* --- CSS Variables (Theme Colors & Settings) --- */
 :root {
@@ -65,7 +65,7 @@ body {
 }
 
 /* --- Headings & Typography --- */
-h1, h2, h3, h4 {
+h1, h2, h3, h4, h5 { /* Added h5 */
   color: var(--dark-color);
   margin-bottom: 0.8em;
   font-weight: 700; /* Bolder headings */
@@ -102,7 +102,7 @@ h3 { /* Sub-Section / Form Titles */
   margin-bottom: 1.2em;
   color: var(--secondary-darker);
 }
-h4 { /* Card Sub-Headings */
+h4 { /* Card Sub-Headings / Modal Form Subtitle */
   margin-top: 1.5em;
   margin-bottom: 0.8em;
   color: var(--text-muted);
@@ -111,6 +111,13 @@ h4 { /* Card Sub-Headings */
   border-bottom: 1px solid var(--light-border);
   padding-bottom: 0.4em;
 }
+h5 { /* Sub-sub headings like in API results */
+    font-size: 1.05em;
+    color: var(--primary-darker);
+    margin-bottom: 0.6em;
+    font-weight: 600;
+}
+
 p {
   margin-bottom: 1em;
   color: #555; /* Slightly softer paragraph text */
@@ -277,6 +284,7 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.8px; /* More spacing */
   outline: none; /* Remove default outline */
+  vertical-align: middle; /* Align better with text/inputs */
 }
 button:focus-visible { /* Style focus state only when using keyboard */
    box-shadow: 0 0 0 0.25rem rgba(var(--focus-ring-rgb, 0, 123, 255), 0.4);
@@ -290,8 +298,8 @@ button:not(:disabled):active { /* Pressed state */
    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 button:disabled {
-  background-color: #e9ecef;
-  color: var(--text-muted);
+  background-color: #e9ecef !important; /* Ensure disabled style overrides */
+  color: var(--text-muted) !important;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
@@ -300,13 +308,17 @@ button:disabled {
 
 /* Primary Button */
 .btn-primary,
-#criarCarroEsportivoBtn, #criarCaminhaoBtn, #formAgendamento button[type="submit"] {
+#criarCarroEsportivoBtn, #criarCaminhaoBtn,
+#formAgendamento button[type="submit"],
+#verificar-clima-btn { /* Added weather button */
   background-color: var(--primary-color);
   color: var(--white-color);
   --focus-ring-rgb: 0, 123, 255; /* For focus-visible */
 }
 .btn-primary:hover:not(:disabled),
-#criarCarroEsportivoBtn:hover:not(:disabled), #criarCaminhaoBtn:hover:not(:disabled), #formAgendamento button[type="submit"]:hover:not(:disabled) {
+#criarCarroEsportivoBtn:hover:not(:disabled), #criarCaminhaoBtn:hover:not(:disabled),
+#formAgendamento button[type="submit"]:hover:not(:disabled),
+#verificar-clima-btn:hover:not(:disabled) {
   background-color: var(--primary-darker);
 }
 
@@ -336,7 +348,7 @@ button:disabled {
   grid-row: 3; /* Positioned below status */
   margin-top: 10px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* Allow buttons to wrap */
   gap: 8px;
   align-items: center; /* Align buttons vertically if they wrap */
 }
@@ -351,6 +363,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 5px; /* Space between icon and text if icon added */
+  margin: 3px; /* Reduce margin slightly for wrapping */
 }
 /* Individual action button colors (using CSS vars) */
 .btn-veiculo-ligar { background-color: var(--success-color); color: white; --focus-ring-rgb: 40, 167, 69;}
@@ -388,13 +401,17 @@ button:disabled {
   background-color: var(--white-color);
   box-shadow: var(--card-shadow);
   display: grid;
-  grid-template-columns: 200px 1fr; /* Slightly wider image */
-  grid-template-rows: auto auto auto 1fr; /* Info, Status, Buttons, History */
+  /* Grid columns: Image area, Main content area */
+  grid-template-columns: 200px 1fr;
+  /* Grid rows: Vehicle Info, Status Msg, Buttons, API Details, History */
+  grid-template-rows: auto auto auto auto 1fr; /* Auto for content, 1fr for history to fill */
   gap: 15px 30px; /* Row gap, Column gap */
-  align-items: start;
-  transition: all 0.3s ease-in-out; /* General transition */
-  overflow: hidden; /* Needed for height transition on removal */
+  align-items: start; /* Align items at the start of their grid cell */
+  transition: all 0.3s ease-in-out, max-height 0.5s ease; /* Add max-height transition */
+  /* overflow: hidden; /* Be careful with this - might clip shadows or hover effects */
+  max-height: 1000px; /* Start with a large max-height for removal animation */
 }
+
 .veiculo-item:hover {
   box-shadow: var(--card-hover-shadow);
   transform: translateY(-4px); /* More lift */
@@ -404,12 +421,13 @@ button:disabled {
   max-width: 100%;
   height: auto;
   border-radius: var(--border-radius-base);
-  grid-row: 1 / span 4;
+  /* Span image across all rows in the first column */
+  grid-row: 1 / -1; /* From row 1 to the last row */
   grid-column: 1;
-  align-self: center;
-  border: 1px solid #eee; /* Slightly visible border */
-  background-color: #f8f9fa; /* BG for image area */
-  padding: 5px; /* Padding around image */
+  align-self: center; /* Center image vertically within its grid area */
+  border: 1px solid #eee;
+  background-color: #f8f9fa;
+  padding: 5px;
 }
 .veiculo-item img[src$="Imagens/default-vehicle.png"] {
   opacity: 0.4;
@@ -417,17 +435,20 @@ button:disabled {
   padding: 15px; /* More padding for default */
 }
 
-.veiculo-info {
-  grid-column: 2;
-  grid-row: 1;
-}
+/* Positioning content in the second column */
+.veiculo-info { grid-column: 2; grid-row: 1; }
+.status-veiculo { grid-column: 2; grid-row: 2; }
+.button-group-veiculo { grid-column: 2; grid-row: 3; }
+.detalhes-api-resultado { grid-column: 2; grid-row: 4; } /* Position API details */
+.historico-manutencao { grid-column: 2; grid-row: 5; } /* History takes the last row */
+
+
 .veiculo-item p {
   margin: 0 0 0.6em 0;
   font-size: 1em;
   color: #444;
   line-height: 1.5; /* Improve readability */
 }
-/* Add spacing for detail labels/values */
 .veiculo-info p { margin-bottom: 0.8em; }
 
 .veiculo-item p strong { /* Model */
@@ -442,8 +463,8 @@ button:disabled {
   font-weight: 600;
   color: var(--text-muted);
   margin-right: 5px;
-  display: inline-block; /* Ensure proper spacing */
-  min-width: 80px; /* Align values slightly */
+  display: inline-block;
+  min-width: 80px;
 }
 .detail-value {
   font-weight: 500;
@@ -453,25 +474,24 @@ button:disabled {
 
 /* Status Message Styling (Inside Vehicle Card) */
 .status-veiculo {
-  grid-column: 2;
-  grid-row: 2; /* Position below main info */
+  /* grid positioning handled above */
   font-style: normal;
   color: var(--dark-color); /* Default text color */
-  margin-top: 5px !important; /* Override other margins */
+  margin-top: 5px !important; /* Override other margins if needed */
   margin-bottom: 10px !important;
-  font-size: 0.9em; /* Slightly larger */
+  font-size: 0.9em;
   font-weight: 600;
-  padding: 8px 15px; /* More padding */
-  border-radius: var(--border-radius-base); /* Standard radius */
-  border: 1px solid transparent; /* Base border */
-  display: inline-block; /* Allow transitions */
+  padding: 8px 15px;
+  border-radius: var(--border-radius-base);
+  border: 1px solid transparent;
+  display: inline-block; /* Allows transitions on transform */
   max-width: 100%;
-  text-align: center;
+  text-align: left; /* Align text left within the status bubble */
   transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
   opacity: 0; /* Hidden by default */
   transform: translateY(10px); /* Start slightly lower */
   visibility: hidden; /* Hide from layout when opacity is 0 */
-  min-height: 1.5em; /* Prevent layout jumps when message appears/disappears */
+  min-height: 2em; /* Prevent layout jumps when message appears/disappears */
 }
 
 .status-veiculo.visible { /* Class added by JS to show */
@@ -490,12 +510,13 @@ button:disabled {
 
 /* History List Styling */
 .historico-manutencao {
-  grid-column: 1 / -1; /* Span both columns */
-  grid-row: 4;
-  margin-top: 25px;
+  /* grid positioning handled above */
+  margin-top: 20px; /* Space above history */
   border-top: 1px solid var(--light-border);
-  padding-top: 25px;
+  padding-top: 20px;
 }
+.historico-manutencao h4 { margin-top: 0; } /* Reset h4 margin */
+
 .historico-manutencao ul {
   list-style: none;
   padding: 0;
@@ -538,17 +559,92 @@ button:disabled {
     font-weight: bold;
 }
 
+/* --- Styling for Simulated API Details Button & Result Area --- */
+.btn-detalhes-api {
+  background-color: var(--info-color);
+  color: white;
+  /* font-size: 0.8em; /* Match other small buttons */
+  /* padding: 7px 10px; */
+  /* margin-top: 5px; /* Add some space if wraps */
+  --focus-ring-rgb: 23, 162, 184;
+}
+.btn-detalhes-api:hover:not(:disabled) {
+  background-color: var(--info-darker);
+}
+.btn-detalhes-api:disabled { /* Style when loading */
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.detalhes-api-resultado {
+  /* grid positioning handled above */
+  margin-top: 15px; /* Space below buttons */
+  padding: 15px 20px;
+  background-color: #f0f4f8; /* Light blue-grey background */
+  border-radius: var(--border-radius-base);
+  border: 1px solid #d6e0ea;
+  font-size: 0.9em;
+  line-height: 1.6;
+  color: #334e68; /* Darker blue-grey text */
+  min-height: 30px; /* Prevent collapsing when empty */
+  display: none; /* Hidden by default, shown by JS */
+}
+
+.detalhes-api-resultado h5 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: var(--primary-darker);
+  font-size: 1.1em;
+  border-bottom: 1px solid #cddcec;
+  padding-bottom: 5px;
+}
+
+.detalhes-api-resultado p {
+  margin-bottom: 8px;
+  color: inherit; /* Inherit color from parent */
+}
+
+.detalhes-api-resultado strong {
+  color: #102a43; /* Even darker for labels */
+  margin-right: 5px;
+}
+
+.detalhes-api-resultado a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+.detalhes-api-resultado a:hover {
+  text-decoration: underline;
+}
+
+.detalhes-api-resultado .loading-message,
+.detalhes-api-resultado .error-message,
+.detalhes-api-resultado .not-found-message {
+  font-style: italic;
+  color: var(--text-muted);
+  text-align: center;
+}
+.detalhes-api-resultado .error-message {
+  color: var(--danger-dark);
+  font-weight: bold;
+  font-style: normal;
+}
+.detalhes-api-resultado .not-found-message {
+    font-style: normal;
+}
+
+
 /* --- Modal --- */
 .modal {
-  display: none;
-  position: fixed;
-  z-index: 1050;
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1050; /* Sit on top */
   left: 0; top: 0;
   width: 100%; height: 100%;
-  overflow-y: auto; /* Allow modal scroll if content is tall */
-  background-color: rgba(30, 40, 50, 0.8); /* Darker, slightly blue overlay */
-  backdrop-filter: blur(5px);
-  padding: 30px 0; /* Add padding top/bottom for scroll */
+  overflow-y: auto; /* Enable scroll if needed */
+  background-color: rgba(30, 40, 50, 0.8); /* Darker overlay */
+  backdrop-filter: blur(5px); /* Optional blur effect */
+  padding: 30px 0; /* Padding for scroll */
 }
 .modal-content {
   background-color: var(--white-color);
@@ -556,13 +652,13 @@ button:disabled {
   padding: 40px;
   border: none;
   width: 90%;
-  max-width: 650px; /* Wider modal */
+  max-width: 650px; /* Max width */
   border-radius: var(--border-radius-lg);
   position: relative;
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
-  animation: scaleInModal 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); /* Scale animation */
-  max-height: 90vh; /* Prevent modal from being taller than viewport */
-  overflow-y: auto; /* Add scroll within modal if needed */
+  animation: scaleInModal 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  max-height: 90vh; /* Prevent modal being taller than viewport */
+  overflow-y: auto; /* Scroll inside modal if content overflows */
 }
 @keyframes scaleInModal {
   from { opacity: 0; transform: scale(0.9); }
@@ -582,6 +678,7 @@ button:disabled {
     color: var(--secondary-darker);
     text-align: left;
     border: none; /* Remove border from h4 inside modal */
+    padding-bottom: 0; /* Remove padding from h4 inside modal */
 }
 .close-button {
   color: #aaa;
@@ -593,11 +690,14 @@ button:disabled {
   line-height: 1;
   transition: var(--transition-base);
   cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
 }
 .close-button:hover,
 .close-button:focus {
   color: var(--danger-color); /* Red close on hover */
-  transform: rotate(90deg); /* Rotate on hover */
+  transform: rotate(90deg);
 }
 /* Style the modal form groups similar to page forms */
 #formAgendamento .form-group {
@@ -648,7 +748,7 @@ button:disabled {
     font-weight: 700;
     color: var(--info-darker);
 }
-/* Style for empty appointments message */
+/* Style for empty/error appointments message */
 #agendamentosFuturosLista li.empty-list-placeholder {
    background-color: var(--light-color);
    border-left-color: var(--light-border);
@@ -656,6 +756,13 @@ button:disabled {
    font-style: italic;
    box-shadow: none;
    text-align: center;
+}
+#agendamentosFuturosLista li.empty-list-placeholder.error-message {
+    background-color: var(--danger-light);
+    border-left-color: var(--danger-color);
+    color: var(--danger-dark);
+    font-style: normal;
+    font-weight: bold;
 }
 #agendamentosFuturosLista li:only-child.empty-list-placeholder {
     /* Specific style if it's the *only* item */
@@ -672,6 +779,13 @@ button:disabled {
     background-color: var(--light-color);
     border-radius: var(--border-radius-base);
     border: 1px dashed var(--light-border);
+}
+.empty-list-placeholder.error-message { /* Style for error placeholders */
+    color: var(--danger-dark);
+    background-color: var(--danger-light);
+    border-color: var(--danger-color);
+    font-style: normal;
+    font-weight: bold;
 }
 
 
@@ -705,6 +819,89 @@ button:disabled {
 #globalStatus.status-warning { background-color: var(--warning-light); color: var(--warning-dark); border-color: #ffeeba; }
 #globalStatus.status-error { background-color: var(--danger-light); color: var(--danger-dark); border-color: #f5c6cb; }
 
+/* --- Styling for Travel Planner Section --- */
+#planejar-viagem .planner-container {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 30px;
+  background-color: var(--light-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+  text-align: center;
+}
+
+#planejar-viagem .form-group {
+  margin-bottom: 20px;
+  text-align: left; /* Align label left */
+}
+
+#planejar-viagem label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+#planejar-viagem input[type="text"] {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--light-border);
+  border-radius: var(--border-radius-base);
+  font-size: 1em;
+}
+#planejar-viagem input[type="text"]:focus {
+   border-color: var(--primary-color);
+   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.2);
+   outline: none;
+}
+
+#planejar-viagem button#verificar-clima-btn {
+  padding: 12px 30px;
+  font-size: 1em;
+  margin-top: 10px;
+}
+
+#previsao-tempo-resultado {
+  margin-top: 25px;
+  padding: 20px;
+  background-color: var(--white-color);
+  border: 1px solid var(--light-border);
+  border-radius: var(--border-radius-base);
+  min-height: 50px;
+  text-align: left; /* Weather details aligned left */
+  line-height: 1.7;
+  transition: background-color 0.3s ease, color 0.3s ease; /* Added color transition */
+}
+#previsao-tempo-resultado.loading {
+  background-color: var(--warning-light);
+  color: var(--warning-dark);
+  font-style: italic;
+  text-align: center;
+}
+#previsao-tempo-resultado.error {
+  background-color: var(--danger-light);
+  color: var(--danger-dark);
+  font-weight: bold;
+  text-align: center;
+}
+#previsao-tempo-resultado p {
+    margin-bottom: 0.5em;
+    color: var(--dark-color); /* Default text color */
+}
+#previsao-tempo-resultado p.error-message { /* Specific style for error message para */
+    color: var(--danger-dark);
+    font-weight: bold;
+}
+#previsao-tempo-resultado img.weather-icon {
+    vertical-align: middle;
+    margin: -5px 8px 0 0; /* Adjust positioning */
+    width: 45px; /* Slightly larger */
+    height: 45px;
+}
+#previsao-tempo-resultado span[title] { /* Style for spans with tooltips */
+    border-bottom: 1px dotted var(--text-muted); /* Subtle underline */
+    cursor: help;
+}
+
 
 /* --- Responsive --- */
 @media (max-width: 1200px) {
@@ -720,29 +917,35 @@ button:disabled {
   .adicionar-container { grid-template-columns: 1fr; } /* Stack forms earlier */
 }
 @media (max-width: 768px) {
-  .container { margin: 20px auto; border-radius: 0; }
+  .container { margin: 20px auto; border-radius: 0; width: 100%; }
   .veiculo-item {
       grid-template-columns: 1fr; /* Single column layout */
-      grid-template-rows: auto auto auto auto auto; /* Image, Info, Status, Buttons, History */
+      /* Adjust rows for stacked layout */
+      grid-template-rows: auto auto auto auto auto auto; /* Image, Info, Status, Buttons, API Details, History */
       gap: 20px 0;
       padding: 20px;
       box-shadow: var(--card-shadow); /* Keep shadow */
+      max-height: none; /* Disable max-height animation for stacked */
   }
    .veiculo-item img {
-      grid-row: 1; grid-column: 1;
+      grid-row: 1; grid-column: 1; /* Image first */
       max-width: 200px; margin: 0 auto 20px auto; /* Center image */
       align-self: center; border: 1px solid #eee;
   }
-  .veiculo-info { grid-row: 2; text-align: center; } /* Center info */
-  .status-veiculo { grid-row: 3; margin: 10px auto; } /* Center status */
-  .button-group-veiculo { grid-row: 4; justify-content: center; gap: 8px; margin-top: 10px; } /* Center buttons */
-  .historico-manutencao { grid-row: 5; margin-top: 25px; padding-top: 20px; }
+  /* Adjust content rows for single column */
+  .veiculo-info { grid-row: 2; grid-column: 1; text-align: center; }
+  .status-veiculo { grid-row: 3; grid-column: 1; margin: 10px auto; } /* Center status */
+  .button-group-veiculo { grid-row: 4; grid-column: 1; justify-content: center; gap: 8px; margin-top: 10px; }
+  .detalhes-api-resultado { grid-row: 5; grid-column: 1; margin-top: 15px; }
+  .historico-manutencao { grid-row: 6; grid-column: 1; margin-top: 20px; padding-top: 20px; }
+
   .button-group-veiculo button { font-size: 0.85em; padding: 8px 12px;}
 
   .modal-content { width: 95%; margin: 10% auto; padding: 30px; }
   #formAgendamento .button-group { text-align: center; }
   #formAgendamento button { display: block; width: 100%; margin: 12px 0; }
 
+  #planejar-viagem .planner-container { width: 95%; padding: 20px; }
 }
 @media (max-width: 480px) {
   body { font-size: 14px; }
@@ -758,6 +961,9 @@ button:disabled {
   .modal-content { margin: 5% auto; padding: 25px; }
   input, textarea, label { font-size: 1em; } /* Keep inputs readable */
   section { padding: 20px; }
+  #planejar-viagem input[type="text"] { padding: 10px 12px; }
+  #planejar-viagem button#verificar-clima-btn { padding: 10px 20px; }
+  #previsao-tempo-resultado { padding: 15px; line-height: 1.6;}
 }
 @media (max-width: 400px) {
     body { font-size: 13px; }
@@ -766,4 +972,5 @@ button:disabled {
     .veiculo-item { padding: 15px; }
     .button-group-veiculo button { font-size: 0.75em; padding: 6px 8px;}
     #globalStatus { font-size: 0.95em; padding: 12px 18px;}
+    #previsao-tempo-resultado img.weather-icon { width: 35px; height: 35px; }
 }
