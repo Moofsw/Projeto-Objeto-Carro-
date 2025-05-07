@@ -21,7 +21,7 @@ class Garagem {
          * with other data or previous versions of the application.
          * @type {string}
          */
-        this.storageKey = 'garagemInteligente_v3_1_refactored'; // Unique key for this version/structure
+        this.storageKey = 'garagemInteligente_v3_1_refactored_api'; // Updated for API integration
         console.log(`Garagem inicializada. Usando chave de armazenamento LocalStorage: ${this.storageKey}`);
     }
 
@@ -36,33 +36,25 @@ class Garagem {
      * @returns {boolean} `true` if the vehicle was successfully added and saved, `false` otherwise (e.g., if the input was invalid, a duplicate ID was found, or saving failed implicitly).
      */
     adicionarVeiculo(veiculo) {
-        // --- Input Validation ---
-        // 1. Type Check: Ensure the object is an instance of Vehicle or its descendant.
         if (!(veiculo instanceof Vehicle)) {
-            console.error("Tentativa de adicionar objeto inválido à garagem. Apenas instâncias de Veiculo (ou subclasses) são permitidas.", veiculo);
+            console.error("Tentativa de adicionar objeto inválido à garagem.", veiculo);
              if (typeof displayGlobalAlert === 'function') {
-                 displayGlobalAlert("Erro interno: Tipo de objeto inválido para adicionar à garagem.", "error");
+                 displayGlobalAlert("Erro interno: Tipo de veículo inválido.", "error");
              }
-            return false; // Indicate failure
+            return false;
         }
-        // 2. Duplicate ID Check: Ensure uniqueness based on the vehicle's ID.
         if (this.veiculos.some(v => v.id === veiculo.id)) {
-             console.warn(`Veículo com ID ${veiculo.id} (${veiculo.modelo}) já existe na garagem. Adição ignorada.`);
+             console.warn(`Veículo com ID ${veiculo.id} (${veiculo.modelo}) já existe. Adição ignorada.`);
              if (typeof displayGlobalAlert === 'function') {
-                 displayGlobalAlert(`Veículo ${veiculo.modelo} (ID: ${veiculo.id}) já existe na garagem!`, 'warning');
+                 displayGlobalAlert(`Veículo ${veiculo.modelo} (ID: ${veiculo.id}) já existe!`, 'warning');
              }
-             return false; // Indicate failure (duplicate)
+             return false;
         }
 
-        // --- Action ---
-        // Add the validated vehicle to the internal array.
         this.veiculos.push(veiculo);
-        console.log(`Veículo adicionado à garagem: ${veiculo.modelo} (Tipo: ${veiculo._tipoVeiculo}, ID: ${veiculo.id}).`);
-
-        // --- Persistence ---
-        // Save the updated garage state to LocalStorage.
-        this.salvar(); // Note: salvar() handles its own errors internally.
-        return true; // Indicate success
+        console.log(`Veículo ${veiculo.modelo} (ID: ${veiculo.id}, Tipo: ${veiculo._tipoVeiculo}) adicionado.`);
+        this.salvar();
+        return true;
     }
 
     /**
@@ -75,21 +67,19 @@ class Garagem {
      * @returns {boolean} `true` if a vehicle with the specified ID was found and removed, `false` if no vehicle with that ID was found.
      */
     removerVeiculo(idVeiculo) {
-        // Find the index of the vehicle with the matching ID.
         const index = this.veiculos.findIndex(v => v.id === idVeiculo);
-
-        // If the vehicle is found (index is not -1)...
         if (index > -1) {
-            // Remove the vehicle from the array using splice. `splice` returns an array containing the removed item(s).
-            const removido = this.veiculos.splice(index, 1)[0]; // Get the actual removed vehicle object
-            console.log(`Veículo removido da garagem: ${removido?.modelo} (ID: ${idVeiculo}).`);
-            // Persist the change.
+            const removido = this.veiculos.splice(index, 1)[0];
+            console.log(`Veículo ${removido?.modelo} (ID: ${idVeiculo}) removido.`);
             this.salvar();
-            return true; // Indicate success
+            return true;
         } else {
-            // If the vehicle was not found.
-            console.warn(`Tentativa de remover veículo com ID ${idVeiculo}, mas ele não foi encontrado na garagem.`);
-            return false; // Indicate failure (not found)
+            console.warn(`Tentativa de remover veículo com ID ${idVeiculo} não encontrado.`);
+            // Feedback usually handled by caller or renderizarGaragem implicitly updating UI
+             if (typeof displayGlobalAlert === 'function') {
+                displayGlobalAlert(`Erro: Veículo com ID ${idVeiculo} não encontrado para remoção.`, 'error');
+            }
+            return false;
         }
     }
 
@@ -119,42 +109,22 @@ class Garagem {
      */
     salvar() {
         try {
-            // Create an array of plain objects suitable for JSON serialization.
             const dataToSave = this.veiculos
-                // Ensure each item is valid and has a toJSON method before calling it.
-                .map(v => {
-                    if (v && typeof v.toJSON === 'function') {
-                        return v.toJSON();
-                    } else {
-                        // Log a warning if an invalid item is encountered during save.
-                        console.warn("Item inválido encontrado na garagem durante a tentativa de salvar:", v);
-                        return null; // Mark invalid items as null
-                    }
-                })
-                // Remove any null entries that resulted from invalid items.
-                .filter(item => item !== null);
-
-            // Convert the array of plain objects to a JSON string.
-            const jsonString = JSON.stringify(dataToSave);
-
-            // Store the JSON string in LocalStorage.
-            localStorage.setItem(this.storageKey, jsonString);
-            // Reduce console noise during normal operation.
-            // console.log(`${this.veiculos.length} veículos salvos no LocalStorage (Chave: ${this.storageKey}).`);
-
+                .filter(v => v instanceof Vehicle && typeof v.toJSON === 'function') // Ensure valid before calling toJSON
+                .map(v => v.toJSON());
+            
+            localStorage.setItem(this.storageKey, JSON.stringify(dataToSave));
+            // console.log(`${this.veiculos.length} veículos salvos.`); // Reduce console noise for frequent saves
         } catch (error) {
-            // --- Error Handling for Saving ---
-            console.error("Erro CRÍTICO ao salvar dados da garagem no LocalStorage:", error);
-            let message = "Erro Crítico: Não foi possível salvar os dados da garagem no seu navegador.";
-            // Check for specific storage quota errors, which are common.
+            console.error("Erro CRÍTICO ao salvar garagem no LocalStorage:", error);
+            let message = "Erro Crítico: Não foi possível salvar os dados da garagem.";
             if (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-                 message += " O armazenamento local (LocalStorage) está cheio. Remova alguns veículos ou limpe dados de outros sites que você não usa.";
-                 console.error("LocalStorage Quota Exceeded! Não é possível salvar mais dados.");
+                 message += " O armazenamento local está cheio.";
+                 console.error("LocalStorage Quota Exceeded!");
             }
-             message += " Verifique o console para mais detalhes técnicos.";
-             // Display a persistent error message to the user if the UI function is available.
+             message += " Verifique o console.";
              if (typeof displayGlobalAlert === 'function') {
-                 displayGlobalAlert(message, "error", 0); // duration 0 makes it persistent
+                 displayGlobalAlert(message, "error", 0); // 0 for persistent
              }
         }
     }
@@ -176,72 +146,55 @@ class Garagem {
      * @returns {void}
      */
     carregar() {
-        console.log(`Tentando carregar dados da garagem do LocalStorage (Chave: ${this.storageKey})...`);
+        console.log(`Tentando carregar dados da chave: ${this.storageKey}`);
         const dataString = localStorage.getItem(this.storageKey);
-
-        // If no data is found in LocalStorage for the key, initialize with an empty array.
         if (!dataString) {
             this.veiculos = [];
-            console.log(`Nenhuma garagem salva encontrada para a chave '${this.storageKey}'. Iniciando com garagem vazia.`);
-            return; // Nothing more to do.
+            console.log(`Nenhuma garagem salva encontrada (${this.storageKey}).`);
+            return;
         }
 
         try {
-            // --- Parsing and Validation ---
             const dataFromStorage = JSON.parse(dataString);
 
-            // **Critical Validation:** Ensure the loaded data is an array.
-            // This protects against corrupted data in LocalStorage.
             if (!Array.isArray(dataFromStorage)) {
-                 console.error("Dado corrompido encontrado no LocalStorage! Esperava um array de veículos, mas o formato é inválido:", dataFromStorage);
-                 this.veiculos = []; // Reset to a safe empty state.
-                 // Attempt to remove the corrupted item to prevent repeated errors on next load.
+                 console.error("Dado corrompido no LocalStorage! Esperado um array.", dataFromStorage);
+                 this.veiculos = []; 
                  try {
                      localStorage.removeItem(this.storageKey);
                       if (typeof displayGlobalAlert === 'function') {
-                          displayGlobalAlert("Dados da garagem salvos estavam corrompidos e foram removidos. A garagem foi resetada.", "error", 10000);
+                          displayGlobalAlert("Dados da garagem corrompidos foram removidos. Começando do zero.", "error", 10000);
                       }
                  } catch (removeError) {
-                     console.error("Falha adicional ao tentar remover dados corrompidos do LocalStorage:", removeError);
+                     console.error("Falha ao remover dados corrompidos:", removeError);
                      if (typeof displayGlobalAlert === 'function') {
-                         displayGlobalAlert("Dados da garagem salvos estão corrompidos. Falha ao limpar automaticamente. Considere limpar manualmente.", "error", 0); // Persistent
+                        displayGlobalAlert("Dados da garagem corrompidos. Falha ao limpar automaticamente.", "error", 0);
                      }
                  }
-                 return; // Stop the loading process.
+                 return;
             }
-
-            // --- Reconstruction ---
-            // Map over the array of plain data objects. For each object, attempt to reconstruct
-            // the corresponding Vehicle instance using the static factory method.
+            
             const loadedVehicles = dataFromStorage
-                .map(v_data => Vehicle.fromJSON(v_data)) // `fromJSON` handles type checking and reconstruction.
-                .filter(v => v instanceof Vehicle);      // Filter out any `null` results (failed reconstructions).
+                .map(v_data => Vehicle.fromJSON(v_data)) 
+                .filter(v => v instanceof Vehicle);      
 
-            // --- Feedback on Discarded Items ---
             const discardedCount = dataFromStorage.length - loadedVehicles.length;
             if (discardedCount > 0) {
-                 // Log a warning if some items couldn't be reconstructed.
-                 console.warn(`${discardedCount} item(ns) inválido(s) ou não reconhecido(s) foram descartados durante o carregamento da garagem a partir do LocalStorage.`);
+                 console.warn(`${discardedCount} itens inválidos foram descartados durante o carregamento.`);
                  if (typeof displayGlobalAlert === 'function') {
-                     displayGlobalAlert(`${discardedCount} registro(s) de veículo(s) salvo(s) estava(m) inválido(s) e foi(ram) ignorado(s) durante o carregamento. Verifique o console para detalhes.`, 'warning', 8000);
+                    displayGlobalAlert(`${discardedCount} registro(s) de veículo(s) inválido(s) foram ignorados.`, 'warning', 8000);
                  }
             }
 
-            // --- Assign Loaded Data ---
-            // Assign the array of successfully reconstructed vehicles to the garage instance.
             this.veiculos = loadedVehicles;
-            console.log(`${this.veiculos.length} veículos carregados e validados com sucesso do LocalStorage.`);
+            console.log(`${this.veiculos.length} veículos carregados e validados.`);
 
         } catch (error) {
-            // --- Error Handling for Loading/Parsing/Reconstruction ---
-            // Catch errors from `JSON.parse` or potentially from within `Vehicle.fromJSON`.
-            console.error("Erro CRÍTICO ao carregar, parsear ou reconstruir dados da garagem do LocalStorage:", error);
-             if (typeof displayGlobalAlert === 'function') {
-                 displayGlobalAlert("Erro grave ao carregar dados salvos da garagem. Resetando para um estado vazio. Verifique o console.", "error", 0); // Persistent
-             }
-            this.veiculos = []; // Reset to a safe empty state on critical failure.
-            // Consider advising the user to clear storage or reporting the error.
-            // localStorage.removeItem(this.storageKey); // Use with caution - might erase data the user could potentially recover.
+            console.error("Erro CRÍTICO ao carregar/parsear garagem do LocalStorage:", error);
+            if (typeof displayGlobalAlert === 'function') {
+                displayGlobalAlert("Erro grave ao carregar dados salvos. Resetando para vazio. Verifique o console.", "error", 0);
+            }
+            this.veiculos = []; 
         }
     }
 
@@ -253,7 +206,6 @@ class Garagem {
      * @returns {Array<Vehicle|CarroEsportivo|Caminhao>} An array containing all vehicle instances currently in the garage.
      */
     listarTodosVeiculos() {
-        // Use the spread syntax to create a new array containing the same vehicle references.
         return [...this.veiculos];
     }
 
@@ -271,46 +223,45 @@ class Garagem {
      *          future appointments are found.
      */
     listarAgendamentosFuturos() {
-        const agora = new Date(); // Get the current date and time for comparison.
-        const futuros = []; // Initialize an empty array to store future appointments.
+        const agora = new Date();
+        const futuros = [];
+        const ManutencaoAvailable = typeof Manutencao !== 'undefined'; // Check if Manutencao class is available
 
         this.veiculos.forEach(v => {
-            // Check if the vehicle object and its history array are valid.
             if (v instanceof Vehicle && Array.isArray(v.historicoManutencao)) {
-                // Iterate through each maintenance record for the current vehicle.
                 v.historicoManutencao.forEach(m => {
-                    // Check if the record is a valid Manutencao instance and has a date property.
-                    if (m instanceof Manutencao && m.data) {
+                    // Ensure record is a Manutencao instance (if class exists) and has a date
+                    if (ManutencaoAvailable && m instanceof Manutencao && m.data) {
                          try {
-                            // Parse the maintenance date string into a Date object.
                             const dataManutencao = new Date(m.data);
-                            // Check if the date is valid (not NaN) and is in the future (or now).
                             if (!isNaN(dataManutencao.getTime()) && dataManutencao >= agora) {
-                                // If it's a future appointment, add an object containing both the vehicle and the maintenance record to the results array.
                                 futuros.push({ veiculo: v, manutencao: m });
                             }
-                         } catch (dateError){
-                             // Silently ignore errors during date parsing for this specific check,
-                             // as an invalid date won't be considered "future".
-                             // Optionally log a warning: console.warn(`Erro ao processar data ${m.data} para ${m.id}`);
-                         }
+                         } catch (dateError){ console.warn(`Erro ao processar data de manutenção ${m.data}: ${dateError.message}`); }
+                    } else if (!ManutencaoAvailable && m && m.data) { // Basic check if Manutencao class is missing
+                        try {
+                            const dataManutencao = new Date(m.data);
+                            if (!isNaN(dataManutencao.getTime()) && dataManutencao >= agora) {
+                                futuros.push({ veiculo: v, manutencao: m }); // Push raw data if class missing
+                            }
+                        } catch (dateError){ console.warn(`Erro ao processar data de manutenção ${m.data}: ${dateError.message}`); }
                     }
                 });
             }
         });
 
-        // Sort the array of future appointments by date in ascending order (soonest first).
-        // Includes robust handling for potentially invalid dates during the sort comparison.
         futuros.sort((a, b) => {
-            const dateA = new Date(a.manutencao.data);
-            const dateB = new Date(b.manutencao.data);
-            // Treat invalid dates by pushing them to the end.
-             if (isNaN(dateA.getTime())) return 1;
-             if (isNaN(dateB.getTime())) return -1;
-            // Sort valid dates chronologically.
-             return dateA - dateB;
+            try {
+                const dateA = new Date(a.manutencao.data);
+                const dateB = new Date(b.manutencao.data);
+                 if (isNaN(dateA.getTime())) return 1; 
+                 if (isNaN(dateB.getTime())) return -1;
+                 return dateA - dateB;
+            } catch (sortError) {
+                 console.error("Erro durante a ordenação de agendamentos:", sortError);
+                 return 0; 
+            }
         });
-
-        return futuros; // Return the sorted array of future appointments.
+        return futuros;
     }
 }

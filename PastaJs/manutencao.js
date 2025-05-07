@@ -13,6 +13,8 @@ class Manutencao {
     constructor(data, tipo, custo, descricao = '', veiculoId = '') {
         // Validate date format and parsability
         if (!this.validarData(data)) {
+            // Se a data não passar na validação, um erro é lançado aqui.
+            // Verifique se a string 'data' está no formato exato YYYY-MM-DDTHH:mm
             throw new Error("Data inválida ou ausente. Use o formato YYYY-MM-DDTHH:mm.");
         }
         // Validate type is a non-empty string
@@ -43,11 +45,22 @@ class Manutencao {
      */
     validarData(dataStr) {
         // Basic check for non-empty string
-        if (!dataStr || typeof dataStr !== 'string') return false;
-        // Check format roughly (YYYY-MM-DDTHH:MM)
-        if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dataStr)) return false;
+        if (!dataStr || typeof dataStr !== 'string') {
+            console.warn("validarData: dataStr não é uma string ou está vazia:", dataStr);
+            return false;
+        }
+        // Check format strictly (YYYY-MM-DDTHH:MM)
+        // Se a data tiver segundos (ex: YYYY-MM-DDTHH:MM:SS), este regex falhará.
+        if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dataStr)) {
+            console.warn("validarData: dataStr não passou no teste regex para YYYY-MM-DDTHH:mm. Valor:", dataStr);
+            return false;
+        }
         // Check if it parses to a valid Date object
-        return !isNaN(new Date(dataStr).getTime());
+        const isValidDateObject = !isNaN(new Date(dataStr).getTime());
+        if (!isValidDateObject) {
+            console.warn("validarData: dataStr não pôde ser parseada para um objeto Date válido. Valor:", dataStr);
+        }
+        return isValidDateObject;
     }
 
 
@@ -71,10 +84,10 @@ class Manutencao {
                 // Use pt-BR locale for formatting
                 dataFormatada = dataObj.toLocaleString('pt-BR', options);
             } else {
-                 console.warn(`Tentando formatar data inválida: ${this.data}`);
+                 console.warn(`Tentando formatar data inválida: ${this.data} para o ID ${this.id}`);
             }
         } catch (e) {
-             console.error("Erro ao formatar data da manutenção:", e, this.data);
+             console.error("Erro ao formatar data da manutenção:", e, "| Data original:", this.data, "| ID:", this.id);
         }
 
         // Format currency using pt-BR locale
@@ -116,7 +129,7 @@ class Manutencao {
      static fromJSON(obj) {
         // Validate the input object structure and identifier
         if (!obj || typeof obj !== 'object' || obj._class !== 'Manutencao') {
-             console.warn("Objeto inválido ou sem identificador '_class' para Manutencao.fromJSON:", obj);
+             console.warn("Manutencao.fromJSON: Objeto inválido ou sem identificador '_class':", obj);
              return null;
         }
         try {
@@ -130,13 +143,15 @@ class Manutencao {
                 obj.veiculoId   // Defaults to '' if undefined
             );
             // Restore the original ID if it was present in the JSON data
+            // O construtor já gera um ID. Se o obj.id existir, sobrescrevemos.
             if (obj.id) {
                  manut.id = obj.id;
             }
              return manut;
         } catch (error) {
             // Catch errors from the constructor (e.g., invalid data/type/cost)
-            console.error("Erro ao recriar Manutencao a partir de JSON:", error.message, "| Objeto:", obj);
+            // Este erro será o "Data inválida..." se a data do JSON não estiver no formato YYYY-MM-DDTHH:mm
+            console.error("Erro ao recriar Manutencao a partir de JSON:", error.message, "| Objeto de entrada:", obj);
             return null; // Return null if reconstruction fails validation
         }
     }

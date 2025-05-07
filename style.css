@@ -310,7 +310,9 @@ button:disabled {
 .btn-primary,
 #criarCarroEsportivoBtn, #criarCaminhaoBtn,
 #formAgendamento button[type="submit"],
-#verificar-clima-btn { /* Added weather button */
+#verificar-clima-btn, /* Simple weather button */
+#verificar-clima-detalhado-btn /* Detailed weather button, if it should be primary */
+ {
   background-color: var(--primary-color);
   color: var(--white-color);
   --focus-ring-rgb: 0, 123, 255; /* For focus-visible */
@@ -318,7 +320,9 @@ button:disabled {
 .btn-primary:hover:not(:disabled),
 #criarCarroEsportivoBtn:hover:not(:disabled), #criarCaminhaoBtn:hover:not(:disabled),
 #formAgendamento button[type="submit"]:hover:not(:disabled),
-#verificar-clima-btn:hover:not(:disabled) {
+#verificar-clima-btn:hover:not(:disabled),
+#verificar-clima-detalhado-btn:hover:not(:disabled)
+{
   background-color: var(--primary-darker);
 }
 
@@ -819,9 +823,11 @@ button:disabled {
 #globalStatus.status-warning { background-color: var(--warning-light); color: var(--warning-dark); border-color: #ffeeba; }
 #globalStatus.status-error { background-color: var(--danger-light); color: var(--danger-dark); border-color: #f5c6cb; }
 
-/* --- Styling for Travel Planner Section --- */
-#planejar-viagem .planner-container {
-  max-width: 600px;
+/* --- Styling for Travel Planner Section (SIMPLE and DETAILED) --- */
+/* Common styles for planner containers */
+#planejar-viagem-simples .planner-container,
+#planejar-viagem-detalhada .planner-container {
+  max-width: 600px; /* Default, detailed can override */
   margin: 20px auto;
   padding: 30px;
   background-color: var(--light-color);
@@ -829,47 +835,60 @@ button:disabled {
   box-shadow: 0 4px 10px rgba(0,0,0,0.07);
   text-align: center;
 }
-
-#planejar-viagem .form-group {
-  margin-bottom: 20px;
-  text-align: left; /* Align label left */
+#planejar-viagem-detalhada .planner-container {
+    max-width: 850px; /* Wider for 5-day forecast */
 }
 
-#planejar-viagem label {
+/* Common styles for form groups within planners */
+#planejar-viagem-simples .form-group,
+#planejar-viagem-detalhada .form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+/* Common styles for labels within planners */
+#planejar-viagem-simples label,
+#planejar-viagem-detalhada label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
 }
 
-#planejar-viagem input[type="text"] {
+/* Common styles for text inputs within planners */
+#planejar-viagem-simples input[type="text"],
+#planejar-viagem-detalhada input[type="text"] {
   width: 100%;
   padding: 12px 15px;
   border: 1px solid var(--light-border);
   border-radius: var(--border-radius-base);
   font-size: 1em;
 }
-#planejar-viagem input[type="text"]:focus {
+#planejar-viagem-simples input[type="text"]:focus,
+#planejar-viagem-detalhada input[type="text"]:focus {
    border-color: var(--primary-color);
    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.2);
    outline: none;
 }
 
-#planejar-viagem button#verificar-clima-btn {
+/* Specific button styles for SIMPLE forecast */
+#planejar-viagem-simples button#verificar-clima-btn {
   padding: 12px 30px;
   font-size: 1em;
   margin-top: 10px;
+  /* It will inherit .btn-primary if that class is applied or if #verificar-clima-btn is targeted by it */
 }
 
-#previsao-tempo-resultado {
+/* Result area for SIMPLE forecast */
+#previsao-tempo-resultado { /* This ID is for SIMPLE forecast */
   margin-top: 25px;
   padding: 20px;
   background-color: var(--white-color);
   border: 1px solid var(--light-border);
   border-radius: var(--border-radius-base);
   min-height: 50px;
-  text-align: left; /* Weather details aligned left */
+  text-align: left;
   line-height: 1.7;
-  transition: background-color 0.3s ease, color 0.3s ease; /* Added color transition */
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 #previsao-tempo-resultado.loading {
   background-color: var(--warning-light);
@@ -885,21 +904,143 @@ button:disabled {
 }
 #previsao-tempo-resultado p {
     margin-bottom: 0.5em;
-    color: var(--dark-color); /* Default text color */
+    color: var(--dark-color);
 }
-#previsao-tempo-resultado p.error-message { /* Specific style for error message para */
+#previsao-tempo-resultado p.error-message {
     color: var(--danger-dark);
     font-weight: bold;
 }
 #previsao-tempo-resultado img.weather-icon {
     vertical-align: middle;
-    margin: -5px 8px 0 0; /* Adjust positioning */
-    width: 45px; /* Slightly larger */
+    margin: -5px 8px 0 0;
+    width: 45px;
     height: 45px;
 }
-#previsao-tempo-resultado span[title] { /* Style for spans with tooltips */
-    border-bottom: 1px dotted var(--text-muted); /* Subtle underline */
+#previsao-tempo-resultado span[title] {
+    border-bottom: 1px dotted var(--text-muted);
     cursor: help;
+}
+
+
+/* --- Estilos Adicionais para Previsão do Tempo DETALHADA (B2.P1.A3) --- */
+/* Button for DETAILED forecast */
+#planejar-viagem-detalhada button#verificar-clima-detalhado-btn {
+  background-color: var(--info-color); /* Distinct color */
+  color: var(--white-color);
+  padding: 12px 30px;
+  font-size: 1em;
+  margin-top: 10px;
+}
+#planejar-viagem-detalhada button#verificar-clima-detalhado-btn:hover:not(:disabled) {
+  background-color: var(--info-darker);
+}
+
+/* Result area for DETAILED forecast */
+#previsao-tempo-detalhada-resultado.weather-results-detailed { /* Using specific class */
+  margin-top: 25px;
+  padding: 20px;
+  background-color: var(--white-color);
+  border: 1px solid var(--light-border);
+  border-radius: var(--border-radius-base);
+  min-height: 50px;
+  text-align: left;
+  line-height: 1.7;
+}
+#previsao-tempo-detalhada-resultado.weather-results-detailed.loading {
+  background-color: var(--warning-light);
+  color: var(--warning-dark);
+  font-style: italic;
+  text-align: center;
+}
+#previsao-tempo-detalhada-resultado.weather-results-detailed.error {
+  background-color: var(--danger-light);
+  color: var(--danger-dark);
+  font-weight: bold;
+  text-align: center;
+}
+/* Title within detailed results */
+#previsao-tempo-detalhada-resultado h3 {
+    font-size: 1.5em;
+    color: var(--primary-darker);
+    margin-bottom: 20px; /* More space */
+    text-align: center;
+    border-bottom: 1px solid var(--light-border);
+    padding-bottom: 10px;
+}
+
+.previsao-dias-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; /* Increased gap */
+    justify-content: center; /* Center cards if they don't fill row */
+    margin-top: 15px;
+}
+
+.previsao-dia-card {
+    background-color: #fdfdff; /* Slightly off-white */
+    border: 1px solid #eaf0f6; /* Lighter border */
+    border-radius: var(--border-radius-lg); /* Larger radius */
+    padding: 20px; /* More padding */
+    text-align: center;
+    flex-basis: calc(20% - 20px); /* Adjusted for 20px gap */
+    min-width: 160px; /* Min width for a card */
+    flex-grow: 1;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    transition: transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out;
+}
+/* Ensure 5 cards per row on larger screens if possible */
+@media (min-width: 1200px) {
+  .previsao-dia-card {
+    flex-basis: calc(20% - 16px); /* Adjust for 20px gap, 4 gaps for 5 items = 80px. (100% - 80px)/5 */
+  }
+}
+
+
+.previsao-dia-card:hover {
+    transform: translateY(-5px) scale(1.02); /* More pronounced hover */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.previsao-dia-card h4 { /* Date */
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: var(--primary-color);
+    font-size: 1.15em; /* Slightly larger date */
+    font-weight: 600;
+}
+
+.previsao-dia-card img.weather-icon {
+    width: 60px; /* Larger icon */
+    height: 60px;
+    margin-bottom: 8px;
+}
+
+.previsao-dia-card p {
+    font-size: 0.9em;
+    margin-bottom: 6px;
+    color: #333;
+    line-height: 1.5;
+}
+.previsao-dia-card p:last-child {
+    margin-bottom: 0;
+}
+
+.previsao-dia-card p span[title] { /* Label: Min, Max, etc. */
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-right: 4px;
+}
+
+.previsao-dia-card p.descricao-tempo {
+    font-style: italic;
+    color: var(--secondary-darker);
+    margin-bottom: 10px !important;
+    font-weight: 500;
+    min-height: 2.8em; /* Ensure consistent height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: capitalize; /* Capitalize first letter via CSS if not done in JS */
 }
 
 
@@ -907,6 +1048,7 @@ button:disabled {
 @media (max-width: 1200px) {
   .container { max-width: 1140px; }
   .veiculo-item { grid-template-columns: 180px 1fr; }
+  .previsao-dia-card { flex-basis: calc(25% - 20px); } /* 4 cards */
 }
 @media (max-width: 992px) {
   body { font-size: 15px; }
@@ -915,26 +1057,25 @@ button:disabled {
   h1 { font-size: 2.4em; }
   h2 { font-size: 1.8em; }
   .adicionar-container { grid-template-columns: 1fr; } /* Stack forms earlier */
+  .previsao-dia-card { flex-basis: calc(33.333% - 20px); } /* 3 cards */
 }
 @media (max-width: 768px) {
   .container { margin: 20px auto; border-radius: 0; width: 100%; }
   .veiculo-item {
       grid-template-columns: 1fr; /* Single column layout */
-      /* Adjust rows for stacked layout */
-      grid-template-rows: auto auto auto auto auto auto; /* Image, Info, Status, Buttons, API Details, History */
+      grid-template-rows: auto auto auto auto auto auto;
       gap: 20px 0;
       padding: 20px;
-      box-shadow: var(--card-shadow); /* Keep shadow */
-      max-height: none; /* Disable max-height animation for stacked */
+      box-shadow: var(--card-shadow);
+      max-height: none;
   }
    .veiculo-item img {
-      grid-row: 1; grid-column: 1; /* Image first */
-      max-width: 200px; margin: 0 auto 20px auto; /* Center image */
+      grid-row: 1; grid-column: 1;
+      max-width: 200px; margin: 0 auto 20px auto;
       align-self: center; border: 1px solid #eee;
   }
-  /* Adjust content rows for single column */
   .veiculo-info { grid-row: 2; grid-column: 1; text-align: center; }
-  .status-veiculo { grid-row: 3; grid-column: 1; margin: 10px auto; } /* Center status */
+  .status-veiculo { grid-row: 3; grid-column: 1; margin: 10px auto; }
   .button-group-veiculo { grid-row: 4; grid-column: 1; justify-content: center; gap: 8px; margin-top: 10px; }
   .detalhes-api-resultado { grid-row: 5; grid-column: 1; margin-top: 15px; }
   .historico-manutencao { grid-row: 6; grid-column: 1; margin-top: 20px; padding-top: 20px; }
@@ -945,7 +1086,9 @@ button:disabled {
   #formAgendamento .button-group { text-align: center; }
   #formAgendamento button { display: block; width: 100%; margin: 12px 0; }
 
-  #planejar-viagem .planner-container { width: 95%; padding: 20px; }
+  #planejar-viagem-simples .planner-container,
+  #planejar-viagem-detalhada .planner-container { width: 95%; padding: 20px; }
+  .previsao-dia-card { flex-basis: calc(50% - 15px); } /* 2 cards for detailed, gap reduced to 15 for this */
 }
 @media (max-width: 480px) {
   body { font-size: 14px; }
@@ -959,11 +1102,17 @@ button:disabled {
   .historico-manutencao ul { font-size: 0.88em;}
   #agendamentosFuturosLista li { padding: 12px 15px; font-size: 0.9em;}
   .modal-content { margin: 5% auto; padding: 25px; }
-  input, textarea, label { font-size: 1em; } /* Keep inputs readable */
+  input, textarea, label { font-size: 1em; }
   section { padding: 20px; }
-  #planejar-viagem input[type="text"] { padding: 10px 12px; }
-  #planejar-viagem button#verificar-clima-btn { padding: 10px 20px; }
-  #previsao-tempo-resultado { padding: 15px; line-height: 1.6;}
+
+  #planejar-viagem-simples input[type="text"],
+  #planejar-viagem-detalhada input[type="text"] { padding: 10px 12px; }
+  #planejar-viagem-simples button#verificar-clima-btn,
+  #planejar-viagem-detalhada button#verificar-clima-detalhado-btn { padding: 10px 20px; }
+
+  #previsao-tempo-resultado,
+  #previsao-tempo-detalhada-resultado.weather-results-detailed { padding: 15px; line-height: 1.6;}
+  .previsao-dia-card { flex-basis: 100%; min-width: unset; } /* 1 card for detailed */
 }
 @media (max-width: 400px) {
     body { font-size: 13px; }
@@ -972,5 +1121,6 @@ button:disabled {
     .veiculo-item { padding: 15px; }
     .button-group-veiculo button { font-size: 0.75em; padding: 6px 8px;}
     #globalStatus { font-size: 0.95em; padding: 12px 18px;}
-    #previsao-tempo-resultado img.weather-icon { width: 35px; height: 35px; }
+    #previsao-tempo-resultado img.weather-icon,
+    .previsao-dia-card img.weather-icon { width: 35px; height: 35px; }
 }
