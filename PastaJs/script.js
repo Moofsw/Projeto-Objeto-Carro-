@@ -464,7 +464,16 @@ let globalStatusDiv, containerCarro, containerCaminhao, agendamentosListContaine
     agendamentoVeiculoIdInput, agendamentoDataInput, agendamentoTipoInput,
     agendamentoCustoInput, agendamentoDescricaoInput,
     // New elements for planner (simple weather)
-    destinoInput, climaBtn, previsaoResultadoDiv;
+    destinoInput, climaBtn, previsaoResultadoDiv,
+    // Elements for detailed forecast controls
+    detailedDayFilterButtonElements = [], // NodeList of buttons
+    highlightRainCheckbox, highlightColdCheckbox, highlightHotCheckbox,
+    previsaoDetalhadaResultadoDiv; // Main result div for detailed forecast
+
+// Global state for detailed forecast
+let _globalPrevisaoDetalhadaProcessada = [];
+let _globalNomeCidadePrevisaoDetalhada = '';
+let _globalActiveNumDaysForecast = 5; // Default to 5 days
 
 
 // --- CONSTANTES ---
@@ -475,7 +484,7 @@ let globalStatusDiv, containerCarro, containerCaminhao, agendamentosListContaine
 // !!! projeto real, use um backend proxy ou variáveis de ambiente        !!!
 // !!! seguras durante o build.                                           !!!
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-const OPENWEATHER_API_KEY = "32ad5f39fc17a3b18cec5953e7a3227e"; // <-- Chave para previsão SIMPLES
+const OPENWEATHER_API_KEY = "b775ac361e430c4b74c75d5ca1bf2165"; // <-- SUA CHAVE AQUI (para previsão SIMPLES)
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! ATENÇÃO: ARMAZENAR A API KEY DIRETAMENTE NO CÓDIGO FRONTEND É INSEGURO!
@@ -483,7 +492,7 @@ const OPENWEATHER_API_KEY = "32ad5f39fc17a3b18cec5953e7a3227e"; // <-- Chave par
 // !!! A forma correta envolve um backend (Node.js, Serverless) atuando como proxy.
 // !!! Para FINS DIDÁTICOS nesta atividade, vamos usá-la aqui temporariamente.
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-const OPENWEATHER_API_KEY_DETALHADA = "SUA_CHAVE_OPENWEATHERMAP_AQUI"; // <-- SUBSTITUA PELA SUA CHAVE REAL para previsão DETALHADA
+const OPENWEATHER_API_KEY_DETALHADA = "b775ac361e430c4b74c75d5ca1bf2165"; // <-- SUA CHAVE AQUI (para previsão DETALHADA)
 
 
 // --- FUNÇÕES AUXILIARES UI ---
@@ -1265,25 +1274,34 @@ async function mostrarDetalhesVeiculo(vehicleId) {
  * @returns {Promise<object>} A promise resolving to weather data or an error object.
  */
 async function buscarPrevisaoTempo(nomeCidade) {
+    console.log("[Simple Forecast] buscarPrevisaoTempo called with city:", nomeCidade);
     if (!nomeCidade || typeof nomeCidade !== 'string' || nomeCidade.trim() === '') {
+        console.log("[Simple Forecast] Invalid city name.");
         return { error: true, message: "Digite uma cidade válida." };
     }
     const cidadeTrimmed = nomeCidade.trim();
-    if (!OPENWEATHER_API_KEY || OPENWEATHER_API_KEY === "COLOQUE_SUA_CHAVE_API_OPENWEATHERMAP_AQUI") { // Check simple key
-         return { error: true, message: "Erro config. serviço de clima." };
+    // Check for placeholder/example/empty key for simple forecast
+    if (!OPENWEATHER_API_KEY || OPENWEATHER_API_KEY === "SUA_CHAVE_PESSOAL_AQUI" || OPENWEATHER_API_KEY === "32ad5f39fc17a3b18cec5953e7a3227e") {
+         console.error("[Simple Forecast] API Key (OPENWEATHER_API_KEY) missing or is placeholder/example!");
+         return { error: true, message: "Erro config. serviço de clima (Simples)." };
     }
     const cidadeCodificada = encodeURIComponent(cidadeTrimmed);
     const url = `https://api.openweathermap.org/data/2.5/weather?q=${cidadeCodificada}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=pt_br`;
-    console.log(`Buscando previsão (simples) para: ${cidadeTrimmed}`);
+    
     try {
+        console.log("[Simple Forecast] Fetching URL:", url);
         const response = await fetch(url);
+        console.log("[Simple Forecast] Response status:", response.status);
         let data;
         try { data = await response.json(); }
-        catch (jsonError) { throw new Error(`Resposta inválida do serviço de clima (Status: ${response.status}).`); }
-
+        catch (jsonError) { 
+            console.error("[Simple Forecast] JSON parsing error:", jsonError);
+            throw new Error(`Resposta inválida do serviço de clima (Status: ${response.status}).`); 
+        }
+        console.log("[Simple Forecast] API Data:", data);
         if (!response.ok || String(data.cod) !== '200') {
             let errMsg = `Erro ${data.cod || response.status}: ${data.message || response.statusText || 'Não foi possível obter a previsão.'}`;
-            if (String(data.cod) === '401') errMsg = "Erro autenticação serviço clima.";
+            if (String(data.cod) === '401') errMsg = "Erro autenticação serviço clima (Simples). Verifique sua API Key.";
             else if (String(data.cod) === '404') errMsg = `Cidade "${cidadeTrimmed}" não encontrada.`;
             else if (String(data.cod) === '429') errMsg = "Limite de requisições excedido.";
             throw new Error(errMsg);
@@ -1299,7 +1317,7 @@ async function buscarPrevisaoTempo(nomeCidade) {
         return clima;
     } catch (error) {
         console.error(`Falha na previsão (simples) OpenWeatherMap:`, error);
-        return { error: true, message: error.message || "Erro de rede/processamento previsão." };
+        return { error: true, message: error.message || "Erro de rede/processamento previsão (Simples)." };
     }
 }
 
@@ -1307,6 +1325,7 @@ async function buscarPrevisaoTempo(nomeCidade) {
  * Handles click for "Verificar Clima" (simple forecast).
  */
 async function verificarClimaHandler() {
+    console.log("[Simple Forecast] verificarClimaHandler called.");
     if (!destinoInput || !previsaoResultadoDiv || !climaBtn) {
         displayGlobalAlert("Erro: Interface do planejador simples indisponível.", "error", 0); return;
     }
@@ -1320,6 +1339,7 @@ async function verificarClimaHandler() {
     climaBtn.disabled = true; climaBtn.textContent = 'Buscando...';
 
     const resultadoClima = await buscarPrevisaoTempo(cidade);
+    console.log("[Simple Forecast] resultadoClima:", resultadoClima);
     if (resultadoClima.error) {
         previsaoResultadoDiv.innerHTML = `<p class="error-message">${resultadoClima.message}</p>`;
         previsaoResultadoDiv.className = 'weather-results error';
@@ -1347,22 +1367,23 @@ async function verificarClimaHandler() {
 
 
 // =============================================================================== //
-// === FUNÇÕES PARA PREVISÃO DO TEMPO DETALHADA (B2.P1.A3)                     === //
+// === FUNÇÕES PARA PREVISÃO DO TEMPO DETALHADA (B2.P1.A3 / A4)                === //
 // =============================================================================== //
 
 /**
  * Busca os dados de previsão do tempo detalhada (forecast 5 dias / 3 horas) para uma cidade.
  * @param {string} cidade O nome da cidade para buscar a previsão.
- * @param {HTMLElement} resultadoDiv O elemento div onde as mensagens de loading/erro serão exibidas.
+ * @param {HTMLElement} resultadoDivParam O elemento div onde as mensagens de loading/erro serão exibidas.
  * @returns {Promise<Object|null>} Uma promessa que resolve com os dados da API ou null em caso de erro.
  */
-async function buscarPrevisaoDetalhada(cidade, resultadoDiv) {
-    // Validação da API Key (use OPENWEATHER_API_KEY_DETALHADA ou a sua chave principal)
-    if (!OPENWEATHER_API_KEY_DETALHADA || OPENWEATHER_API_KEY_DETALHADA === "SUA_CHAVE_OPENWEATHERMAP_AQUI") {
-        console.error("Chave da API OpenWeatherMap para previsão detalhada não configurada!");
-        if (resultadoDiv) {
-            resultadoDiv.innerHTML = '<p class="error-message">Erro de configuração do serviço de clima detalhado.</p>';
-            resultadoDiv.className = 'error'; // Use a class consistent with other error displays
+async function buscarPrevisaoDetalhada(cidade, resultadoDivParam) {
+    console.log("[Detailed Forecast] buscarPrevisaoDetalhada called with city:", cidade);
+    // Check for placeholder/example/empty key for detailed forecast
+    if (!OPENWEATHER_API_KEY_DETALHADA || OPENWEATHER_API_KEY_DETALHADA === "SUA_CHAVE_PESSOAL_AQUI" || OPENWEATHER_API_KEY_DETALHADA === "32ad5f39fc17a3b18cec5953e7a3227e") { 
+        console.error("[Detailed Forecast] API Key (OPENWEATHER_API_KEY_DETALHADA) missing or is placeholder/example!");
+        if (resultadoDivParam) {
+            resultadoDivParam.innerHTML = '<p class="error-message">Erro de configuração do serviço de clima detalhado.</p>';
+            resultadoDivParam.className = 'weather-results-detailed error';
         }
         return null;
     }
@@ -1370,39 +1391,40 @@ async function buscarPrevisaoDetalhada(cidade, resultadoDiv) {
     const cidadeCodificada = encodeURIComponent(cidade);
     const url = `https://api.openweathermap.org/data/2.5/forecast?q=${cidadeCodificada}&appid=${OPENWEATHER_API_KEY_DETALHADA}&units=metric&lang=pt_br`;
     
-    if (resultadoDiv) {
-        resultadoDiv.innerHTML = '<p class="loading-message">Buscando previsão detalhada (5 dias)...</p>';
-        resultadoDiv.className = 'loading'; // Use a class consistent with other loading displays
+    if (resultadoDivParam) {
+        resultadoDivParam.innerHTML = '<p class="loading-message">Buscando previsão detalhada (5 dias)...</p>';
+        resultadoDivParam.className = 'weather-results-detailed loading';
     }
 
     try {
+        console.log("[Detailed Forecast] Fetching URL:", url);
         const response = await fetch(url);
-        const responseData = await response.json(); // Parse JSON once
+        console.log("[Detailed Forecast] Response status:", response.status);
+        const responseData = await response.json();
+        console.log("[Detailed Forecast] API Data (Raw):", responseData);
 
-        if (!response.ok) { // Check HTTP status first
-            let errorMessage = `Erro ${responseData.cod || response.status}`; // Use cod from JSON if available
-            if (responseData && responseData.message) { // API often provides a message
+        if (!response.ok) {
+            let errorMessage = `Erro ${responseData.cod || response.status}`;
+            if (responseData && responseData.message) {
                 errorMessage += `: ${responseData.message}`;
             } else if (response.status === 401) {
-                errorMessage += " - Chave de API inválida ou não autorizada.";
+                errorMessage += " - Chave de API inválida ou não autorizada (Detalhada). Verifique sua API Key.";
             } else if (response.status === 404) {
-                errorMessage += " - Cidade não encontrada.";
+                errorMessage += ` - Cidade "${cidade}" não encontrada.`;
             } else {
                 errorMessage += " - Não foi possível buscar a previsão detalhada.";
             }
             console.error("Erro da API OpenWeather (Forecast):", errorMessage, responseData);
-            throw new Error(errorMessage); // Throw after logging
+            throw new Error(errorMessage);
         }
-        // Log success if needed: console.log("Dados da API (Forecast):", responseData);
-        return responseData; // Return the full data object
-    } catch (error) { // Catches fetch errors or errors thrown above
+        return responseData;
+    } catch (error) {
         console.error("Erro ao buscar previsão detalhada:", error);
-        if (resultadoDiv) {
-            // error.message should contain the user-friendly message from above
-            resultadoDiv.innerHTML = `<p class="error-message">${error.message || 'Falha na comunicação com o serviço de clima.'}</p>`;
-            resultadoDiv.className = 'error';
+        if (resultadoDivParam) {
+            resultadoDivParam.innerHTML = `<p class="error-message">${error.message || 'Falha na comunicação com o serviço de clima.'}</p>`;
+            resultadoDivParam.className = 'weather-results-detailed error';
         }
-        return null; // Indicate failure
+        return null;
     }
 }
 
@@ -1417,20 +1439,16 @@ function processarDadosForecast(dataApi) {
         return [];
     }
 
-    const previsoesPorDia = {}; // Objeto para agrupar previsões por data "AAAA-MM-DD"
+    const previsoesPorDia = {};
 
     dataApi.list.forEach(item => {
-        const dataHoraTexto = item.dt_txt; // ex: "2023-10-27 12:00:00"
-        const dataApenas = dataHoraTexto.split(' ')[0]; // "2023-10-27"
+        const dataHoraTexto = item.dt_txt;
+        const dataApenas = dataHoraTexto.split(' ')[0];
         
         if (!previsoesPorDia[dataApenas]) {
             previsoesPorDia[dataApenas] = {
-                temps: [],
-                descricoes: {}, // Para contar ocorrências de descrições e escolher a mais comum
-                icones: {},     // Para contar ocorrências de ícones e escolher o mais comum
-                umidades: [],
-                ventoVelocidades: [], // m/s
-                dt_timestamps: [] // Store timestamps to pick a representative one if needed (e.g., for icon)
+                temps: [], descricoes: {}, icones: {}, umidades: [],
+                ventoVelocidades: [], dt_timestamps: []
             };
         }
         previsoesPorDia[dataApenas].temps.push(item.main.temp);
@@ -1438,10 +1456,8 @@ function processarDadosForecast(dataApi) {
         previsoesPorDia[dataApenas].ventoVelocidades.push(item.wind.speed);
         previsoesPorDia[dataApenas].dt_timestamps.push(item.dt);
 
-
         const desc = item.weather[0].description;
         const icon = item.weather[0].icon;
-        
         previsoesPorDia[dataApenas].descricoes[desc] = (previsoesPorDia[dataApenas].descricoes[desc] || 0) + 1;
         previsoesPorDia[dataApenas].icones[icon] = (previsoesPorDia[dataApenas].icones[icon] || 0) + 1;
     });
@@ -1452,63 +1468,98 @@ function processarDadosForecast(dataApi) {
         const tempMax = Math.max(...diaInfo.temps);
         const umidadeMedia = diaInfo.umidades.reduce((a, b) => a + b, 0) / diaInfo.umidades.length;
         const ventoMedioMs = diaInfo.ventoVelocidades.reduce((a, b) => a + b, 0) / diaInfo.ventoVelocidades.length;
-        const ventoMedioKmh = ventoMedioMs * 3.6; // Converter m/s para km/h
+        const ventoMedioKmh = ventoMedioMs * 3.6;
 
         let descricaoMaisFrequente = 'N/D';
         if (Object.keys(diaInfo.descricoes).length > 0) {
             descricaoMaisFrequente = Object.keys(diaInfo.descricoes).reduce((a, b) => diaInfo.descricoes[a] > diaInfo.descricoes[b] ? a : b);
         }
         
-        // Pick icon: either most frequent or one from midday if available
-        let iconeMaisFrequente = '01d'; // Default icon
+        let iconeMaisFrequente = '01d';
         if (Object.keys(diaInfo.icones).length > 0) {
             iconeMaisFrequente = Object.keys(diaInfo.icones).reduce((a, b) => diaInfo.icones[a] > diaInfo.icones[b] ? a : b);
         }
         
         const [ano, mes, diaNum] = dataKey.split('-');
-        // More robust date formatting for display, ensuring correct day of week etc. can be done here or in display
         const dataObj = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(diaNum));
         const dataFormatada = dataObj.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
 
-
         return {
-            data: dataFormatada, // e.g., "sex, 27/10"
-            dataISO: dataKey, // Keep YYYY-MM-DD for sorting or other logic if needed
-            temp_min: tempMin.toFixed(1),
-            temp_max: tempMax.toFixed(1),
-            umidade: umidadeMedia.toFixed(0),
-            vento: ventoMedioKmh.toFixed(1), // km/h
+            data: dataFormatada, dataISO: dataKey,
+            temp_min: tempMin.toFixed(1), temp_max: tempMax.toFixed(1),
+            umidade: umidadeMedia.toFixed(0), vento: ventoMedioKmh.toFixed(1),
             descricao: descricaoMaisFrequente.charAt(0).toUpperCase() + descricaoMaisFrequente.slice(1),
             icone: iconeMaisFrequente
         };
-    }).sort((a, b) => new Date(a.dataISO) - new Date(b.dataISO)); // Ensure sorted by date
+    }).sort((a, b) => new Date(a.dataISO) - new Date(b.dataISO));
     
-    return resumoDiario.slice(0, 5); // Guarantees no maximum 5 days, API usually returns data for 5-6 days
+    return resumoDiario.slice(0, 5);
 }
 
 /**
- * Exibe a previsão do tempo detalhada processada (resumo diário) na interface do usuário.
- * @param {Array<Object>} previsaoProcessada Array com os dados diários processados.
- * @param {string} nomeCidadeExibicao O nome da cidade para exibição no título.
- * @param {HTMLElement} resultadoDiv O elemento div onde a previsão será renderizada.
+ * Atualiza a exibição da previsão do tempo detalhada na UI.
+ * Leva em consideração os filtros de dias e destaques selecionados.
+ * @JSDoc
  */
-function exibirPrevisaoDetalhada(previsaoProcessada, nomeCidadeExibicao, resultadoDiv) {
-    if (!resultadoDiv) return;
+function updateDetailedForecastDisplay() {
+    console.log("[Detailed Forecast] updateDetailedForecastDisplay called.");
+    console.log("[Detailed Forecast] Current global processed data:", _globalPrevisaoDetalhadaProcessada);
+    console.log("[Detailed Forecast] Current city:", _globalNomeCidadePrevisaoDetalhada);
+    console.log("[Detailed Forecast] Current day filter:", _globalActiveNumDaysForecast);
 
-    resultadoDiv.innerHTML = ''; 
-    resultadoDiv.className = 'weather-results-detailed'; // Use a more specific class name
-
-    if (!previsaoProcessada || previsaoProcessada.length === 0) {
-        resultadoDiv.innerHTML = `<p class="not-found-message">Não há dados de previsão detalhada para exibir para ${nomeCidadeExibicao}.</p>`;
+    if (!previsaoDetalhadaResultadoDiv) {
+        console.error("Elemento de resultado da previsão detalhada não encontrado.");
         return;
     }
 
-    let html = `<h3>Previsão para ${nomeCidadeExibicao} (Próximos ${previsaoProcessada.length} dias)</h3>`;
+    previsaoDetalhadaResultadoDiv.innerHTML = ''; 
+    previsaoDetalhadaResultadoDiv.className = 'weather-results-detailed';
+
+    if (!_globalPrevisaoDetalhadaProcessada || _globalPrevisaoDetalhadaProcessada.length === 0) {
+        previsaoDetalhadaResultadoDiv.innerHTML = `<p class="not-found-message">Não há dados de previsão detalhada para exibir para ${_globalNomeCidadePrevisaoDetalhada || 'a cidade informada'}.</p>`;
+        return;
+    }
+
+    const dataToDisplay = _globalPrevisaoDetalhadaProcessada.slice(0, _globalActiveNumDaysForecast);
+
+    if (dataToDisplay.length === 0) { // Should not happen if _globalPrevisaoDetalhadaProcessada has items
+        previsaoDetalhadaResultadoDiv.innerHTML = `<p class="not-found-message">Nenhuma previsão para o período selecionado.</p>`;
+        return;
+    }
+
+    // Determine highlight states
+    const doHighlightRain = highlightRainCheckbox?.checked;
+    const doHighlightCold = highlightColdCheckbox?.checked;
+    const coldThreshold = parseFloat(highlightColdCheckbox?.dataset.tempThreshold || "10");
+    const doHighlightHot = highlightHotCheckbox?.checked;
+    const hotThreshold = parseFloat(highlightHotCheckbox?.dataset.tempThreshold || "30");
+
+    let titleText;
+    if (_globalActiveNumDaysForecast === 1 && dataToDisplay.length === 1) {
+        titleText = `Previsão para Hoje em ${_globalNomeCidadePrevisaoDetalhada}`;
+    } else {
+        titleText = `Previsão para ${_globalNomeCidadePrevisaoDetalhada} (Próximos ${dataToDisplay.length} Dias)`;
+    }
+
+    let html = `<h3>${titleText}</h3>`;
     html += '<div class="previsao-dias-container">'; 
 
-    previsaoProcessada.forEach(dia => {
+    dataToDisplay.forEach(dia => {
+        let cardClasses = ['previsao-dia-card'];
+        const descLowerCase = dia.descricao.toLowerCase();
+
+        if (doHighlightRain && (descLowerCase.includes('chuva') || descLowerCase.includes('tempestade') || descLowerCase.includes('garoa') || descLowerCase.includes('drizzle') || descLowerCase.includes('rain') || descLowerCase.includes('thunderstorm'))) {
+            cardClasses.push('dia-chuvoso');
+        }
+        if (doHighlightCold && parseFloat(dia.temp_min) < coldThreshold) {
+            cardClasses.push('dia-frio');
+        }
+        if (doHighlightHot && parseFloat(dia.temp_max) > hotThreshold) {
+            cardClasses.push('dia-quente');
+        }
+
         html += `
-            <div class="previsao-dia-card">
+            <div class="${cardClasses.join(' ')}">
                 <h4>${dia.data}</h4>
                 <img src="https://openweathermap.org/img/wn/${dia.icone}@2x.png" alt="${dia.descricao}" class="weather-icon" title="${dia.descricao}">
                 <p class="descricao-tempo">${dia.descricao}</p>
@@ -1520,18 +1571,20 @@ function exibirPrevisaoDetalhada(previsaoProcessada, nomeCidadeExibicao, resulta
         `;
     });
     html += '</div>';
-    resultadoDiv.innerHTML = html;
+    previsaoDetalhadaResultadoDiv.innerHTML = html;
 }
+
 
 /**
  * Manipulador de evento para o botão de verificar clima detalhado.
+ * @JSDoc
  */
 async function verificarClimaDetalhadoHandler() {
+    console.log("[Detailed Forecast] verificarClimaDetalhadoHandler called.");
     const inputEl = document.getElementById('destino-viagem-detalhada');
-    const resultadoEl = document.getElementById('previsao-tempo-detalhada-resultado');
     const btnEl = document.getElementById('verificar-clima-detalhado-btn');
 
-    if (!inputEl || !resultadoEl || !btnEl) {
+    if (!inputEl || !previsaoDetalhadaResultadoDiv || !btnEl) {
         console.error("Elementos da UI para previsão detalhada não encontrados.");
         displayGlobalAlert("Erro interno: Interface de previsão detalhada indisponível.", "error");
         return;
@@ -1539,34 +1592,50 @@ async function verificarClimaDetalhadoHandler() {
 
     const cidade = inputEl.value.trim();
     if (!cidade) {
-        resultadoEl.innerHTML = '<p class="error-message">Por favor, digite o nome da cidade.</p>';
-        resultadoEl.className = 'weather-results-detailed error'; // Consistent class
+        previsaoDetalhadaResultadoDiv.innerHTML = '<p class="error-message">Por favor, digite o nome da cidade.</p>';
+        previsaoDetalhadaResultadoDiv.className = 'weather-results-detailed error'; 
         inputEl.focus();
         return;
     }
 
     btnEl.disabled = true;
     btnEl.textContent = 'Buscando...';
-    // resultadoEl will be updated by buscarPrevisaoDetalhada during loading/error
-
-    const dadosBrutosApi = await buscarPrevisaoDetalhada(cidade, resultadoEl); 
+    
+    const dadosBrutosApi = await buscarPrevisaoDetalhada(cidade, previsaoDetalhadaResultadoDiv);
+    console.log("[Detailed Forecast] dadosBrutosApi from buscarPrevisaoDetalhada:", dadosBrutosApi);
     
     if (dadosBrutosApi && dadosBrutosApi.city) { 
-        const nomeCidadeApi = dadosBrutosApi.city.name || cidade; 
-        const previsaoProcessada = processarDadosForecast(dadosBrutosApi);
-        exibirPrevisaoDetalhada(previsaoProcessada, nomeCidadeApi, resultadoEl);
+        _globalNomeCidadePrevisaoDetalhada = dadosBrutosApi.city.name || cidade; 
+        _globalPrevisaoDetalhadaProcessada = processarDadosForecast(dadosBrutosApi);
+        console.log("[Detailed Forecast] Processed forecast data:", _globalPrevisaoDetalhadaProcessada);
+        _globalActiveNumDaysForecast = 5;
+        detailedDayFilterButtonElements.forEach(button => {
+            button.classList.remove('active');
+            if (parseInt(button.dataset.days) === 5) {
+                button.classList.add('active');
+            }
+        });
+        updateDetailedForecastDisplay();
     } else if (dadosBrutosApi && !dadosBrutosApi.city && dadosBrutosApi.list && dadosBrutosApi.list.length > 0) {
-        // Case where city info might be missing but list is present (less likely with forecast API)
         console.warn("Dados da API (Forecast) recebidos, mas falta a propriedade 'city'. Usando nome digitado.", dadosBrutosApi);
-        const previsaoProcessada = processarDadosForecast(dadosBrutosApi);
-        exibirPrevisaoDetalhada(previsaoProcessada, cidade, resultadoEl); // Use inputted city name
+        _globalNomeCidadePrevisaoDetalhada = cidade;
+        _globalPrevisaoDetalhadaProcessada = processarDadosForecast(dadosBrutosApi);
+        _globalActiveNumDaysForecast = 5;
+        detailedDayFilterButtonElements.forEach(button => {
+            button.classList.remove('active');
+            if (parseInt(button.dataset.days) === 5) button.classList.add('active');
+        });
+        updateDetailedForecastDisplay();
     } else if (!dadosBrutosApi) {
-        // Error message already handled by buscarPrevisaoDetalhada in resultadoEl
-        console.log("Falha ao buscar dados detalhados, mensagem de erro já exibida.");
+        _globalPrevisaoDetalhadaProcessada = []; 
+        _globalNomeCidadePrevisaoDetalhada = cidade; 
+        console.log("Falha ao buscar dados detalhados, mensagem de erro já exibida por buscarPrevisaoDetalhada.");
+        updateDetailedForecastDisplay(); 
     } else {
-        // Fallback for unexpected structure or empty list where buscarPrevisaoDetalhada didn't set error
-        resultadoEl.innerHTML = `<p class="error-message">Não foi possível obter a previsão detalhada para ${cidade}.</p>`;
-        resultadoEl.className = 'weather-results-detailed error';
+        _globalPrevisaoDetalhadaProcessada = []; 
+        _globalNomeCidadePrevisaoDetalhada = cidade;
+        previsaoDetalhadaResultadoDiv.innerHTML = `<p class="error-message">Não foi possível obter a previsão detalhada para ${cidade}.</p>`;
+        previsaoDetalhadaResultadoDiv.className = 'weather-results-detailed error';
         console.warn("Dados da API (Forecast) com estrutura inesperada ou lista vazia:", dadosBrutosApi);
     }
 
@@ -1574,6 +1643,21 @@ async function verificarClimaDetalhadoHandler() {
     btnEl.textContent = 'Ver Previsão Detalhada';
 }
 
+/**
+ * Handles clicks on day filter buttons for detailed forecast.
+ * @param {Event} event - The click event.
+ */
+function handleDayFilterClick(event) {
+    const clickedButton = event.target.closest('.btn-day-filter');
+    if (!clickedButton) return;
+
+    _globalActiveNumDaysForecast = parseInt(clickedButton.dataset.days);
+
+    detailedDayFilterButtonElements.forEach(btn => btn.classList.remove('active'));
+    clickedButton.classList.add('active');
+
+    updateDetailedForecastDisplay();
+}
 
 
 // --- EVENT LISTENERS E INICIALIZAÇÃO ---
@@ -1596,17 +1680,27 @@ document.addEventListener('DOMContentLoaded', () => {
         agendamentoDescricaoInput = document.getElementById('agendamentoDescricao');
 
         // Cache Planner elements (SIMPLE weather)
-        destinoInput = document.getElementById('destino-viagem'); // Might be null if HTML doesn't have it
-        climaBtn = document.getElementById('verificar-clima-btn'); // Might be null
-        previsaoResultadoDiv = document.getElementById('previsao-tempo-resultado'); // Might be null
+        destinoInput = document.getElementById('destino-viagem'); 
+        climaBtn = document.getElementById('verificar-clima-btn'); 
+        previsaoResultadoDiv = document.getElementById('previsao-tempo-resultado');
 
-        // Cache DETAILED forecast elements
+        // Cache DETAILED forecast elements and controls
         const destinoInputDetalhada = document.getElementById('destino-viagem-detalhada');
         const climaDetalhadoBtn = document.getElementById('verificar-clima-detalhado-btn');
-        // previsaoDetalhadaResultadoDiv is accessed within its handler
+        previsaoDetalhadaResultadoDiv = document.getElementById('previsao-tempo-detalhada-resultado');
+        
+        // Detailed forecast controls
+        document.querySelectorAll('.forecast-day-filters .btn-day-filter').forEach(btn => detailedDayFilterButtonElements.push(btn));
+        highlightRainCheckbox = document.getElementById('highlight-rain');
+        highlightColdCheckbox = document.getElementById('highlight-cold');
+        highlightHotCheckbox = document.getElementById('highlight-hot');
 
-         if (!globalStatusDiv || !containerCarro || !containerCaminhao || !agendamentosListContainer || !agendamentoModal || !formAgendamento || !destinoInputDetalhada || !climaDetalhadoBtn) {
-             throw new Error("Um ou mais elementos essenciais da UI (incluindo previsão detalhada) não foram encontrados no DOM.");
+
+         if (!globalStatusDiv || !containerCarro || !containerCaminhao || !agendamentosListContainer || !agendamentoModal || !formAgendamento || 
+             !destinoInputDetalhada || !climaDetalhadoBtn || !previsaoDetalhadaResultadoDiv || detailedDayFilterButtonElements.length === 0 ||
+             !highlightRainCheckbox || !highlightColdCheckbox || !highlightHotCheckbox
+            ) {
+             throw new Error("Um ou mais elementos essenciais da UI (incluindo controles de previsão detalhada) não foram encontrados no DOM.");
          }
     } catch (error) {
         console.error("Erro Crítico ao buscar elementos do DOM essenciais:", error);
@@ -1688,12 +1782,21 @@ document.addEventListener('DOMContentLoaded', () => {
                              }
                              // Clear detailed planner UI
                              const destinoDetInput = document.getElementById('destino-viagem-detalhada');
-                             const previsaoDetResDiv = document.getElementById('previsao-tempo-detalhada-resultado');
                              if(destinoDetInput) destinoDetInput.value = '';
-                             if(previsaoDetResDiv) {
-                                previsaoDetResDiv.innerHTML = ''; // Clear content
-                                previsaoDetResDiv.className = 'weather-results-detailed'; // Reset class
-                             }
+                             _globalPrevisaoDetalhadaProcessada = [];
+                             _globalNomeCidadePrevisaoDetalhada = '';
+                             _globalActiveNumDaysForecast = 5; // Reset filter
+                             updateDetailedForecastDisplay(); // Clears the display area
+                             // Reset filter buttons visual state
+                             detailedDayFilterButtonElements.forEach(btn => {
+                                btn.classList.remove('active');
+                                if(parseInt(btn.dataset.days) === 5) btn.classList.add('active');
+                             });
+                             // Reset highlight checkboxes
+                             if(highlightRainCheckbox) highlightRainCheckbox.checked = false;
+                             if(highlightColdCheckbox) highlightColdCheckbox.checked = false;
+                             if(highlightHotCheckbox) highlightHotCheckbox.checked = false;
+
                              displayGlobalAlert("Dados da garagem limpos.", "info");
                          } catch(e) { displayGlobalAlert("Erro ao limpar dados.", "error"); }
                      } else { displayGlobalAlert("Limpeza cancelada.", "info", 3000); }
@@ -1712,7 +1815,7 @@ document.addEventListener('DOMContentLoaded', () => {
              });
         } else { console.warn("Elementos para previsão SIMPLES não encontrados. Funcionalidade desativada."); }
 
-        // Listener for DETAILED Weather Button
+        // Listeners for DETAILED Weather
         const climaDetalhadoBtn = document.getElementById('verificar-clima-detalhado-btn');
         const destinoInputDetalhada = document.getElementById('destino-viagem-detalhada');
         if (climaDetalhadoBtn && destinoInputDetalhada) {
@@ -1723,7 +1826,21 @@ document.addEventListener('DOMContentLoaded', () => {
                      verificarClimaDetalhadoHandler(); 
                  }
              });
-        } else { console.warn("Botão/Input para previsão DETALHADA não encontrado."); }
+            
+            // Listeners for day filter buttons
+            detailedDayFilterButtonElements.forEach(button => {
+                button.addEventListener('click', handleDayFilterClick);
+            });
+
+            // Listeners for highlight checkboxes
+            [highlightRainCheckbox, highlightColdCheckbox, highlightHotCheckbox].forEach(checkbox => {
+                if (checkbox) { // Ensure checkbox element exists
+                    checkbox.addEventListener('change', updateDetailedForecastDisplay);
+                }
+            });
+
+        } else { console.warn("Elementos para previsão DETALHADA não encontrados. Funcionalidade desativada."); }
+
 
     } catch (listenerError) {
          console.error("Erro ao configurar event listeners:", listenerError);
@@ -1741,11 +1858,12 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("Inicialização da Garagem Inteligente v3.1 + APIs concluída.");
     // API Key status checks
     let messages = [];
-    if (!OPENWEATHER_API_KEY || OPENWEATHER_API_KEY === "COLOQUE_SUA_CHAVE_API_OPENWEATHERMAP_AQUI" || OPENWEATHER_API_KEY === "32ad5f39fc17a3b18cec5953e7a3227e" /* Example key, treat as unconfigured */) {
-        if (destinoInput) messages.push("Previsão SIMPLES desativada (API Key não configurada)");
+    const placeholderKeys = ["SUA_CHAVE_PESSOAL_AQUI", "32ad5f39fc17a3b18cec5953e7a3227e"];
+    if (!OPENWEATHER_API_KEY || placeholderKeys.includes(OPENWEATHER_API_KEY)) {
+        if (destinoInput) messages.push("Previsão SIMPLES desativada (API Key não configurada ou é exemplo)");
     }
-    if (!OPENWEATHER_API_KEY_DETALHADA || OPENWEATHER_API_KEY_DETALHADA === "SUA_CHAVE_OPENWEATHERMAP_AQUI") {
-        messages.push("Previsão DETALHADA desativada (API Key não configurada)");
+    if (!OPENWEATHER_API_KEY_DETALHADA || placeholderKeys.includes(OPENWEATHER_API_KEY_DETALHADA)) {
+        messages.push("Previsão DETALHADA desativada (API Key não configurada ou é exemplo)");
     }
 
     if (messages.length > 0) {

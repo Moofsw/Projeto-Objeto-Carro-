@@ -106,46 +106,40 @@
         </div>
         
         <hr>
-        
-        <!-- SEÇÃO PARA PREVISÃO DO TEMPO SIMPLES (B2.P1.A2) -->
-        <!-- Esta seção pode ou não existir dependendo da evolução anterior do projeto. -->
-        <!-- Se existir, o script.js já tenta obter os IDs: destino-viagem, verificar-clima-btn, previsao-tempo-resultado -->
-        <section id="planejar-viagem-simples">
-            <h2>Planejar Viagem com Previsão Atual</h2>
-            <div class="planner-container">
-                <div class="form-group">
-                    <label for="destino-viagem">Cidade de Destino (Previsão Atual):</label>
-                    <input type="text" id="destino-viagem" placeholder="Digite a cidade para ver o tempo AGORA">
-                </div>
-                <button id="verificar-clima-btn">Verificar Clima Atual</button>
-                <div id="previsao-tempo-resultado">
-                    <!-- A previsão do tempo ATUAL será exibida aqui -->
-                    <p>Digite uma cidade e clique em "Verificar Clima Atual".</p>
-                </div>
-            </div>
-        </section>
-        <!-- FIM DA SEÇÃO DE PREVISÃO SIMPLES -->
-
-        <hr>
-
-        <!-- SEÇÃO PARA PREVISÃO DO TEMPO DETALHADA (B2.P1.A3) -->
+        <!-- SEÇÃO PARA PREVISÃO DO TEMPO DETALHADA (B2.P1.A3 / A4) -->
         <section id="planejar-viagem-detalhada">
             <h2>Planejar Viagem com Previsão Detalhada</h2>
             <div class="planner-container">
                 <div class="form-group">
                     <label for="destino-viagem-detalhada">Cidade de Destino (Previsão 5 Dias):</label>
-                    <input type="text" id="destino-viagem-detalhada" placeholder="Digite a cidade para ver a previsão de 5 dias">
+                    <input type="text" id="destino-viagem-detalhada" placeholder="Digite a cidade para a previsão detalhada">
                 </div>
                 <button id="verificar-clima-detalhado-btn" class="btn-primary">Ver Previsão Detalhada</button>
+
+                <div class="forecast-controls-container">
+                    <div class="forecast-day-filters">
+                        <h4>Mostrar Previsão Para:</h4>
+                        <button class="btn-day-filter active" data-days="5" title="Mostrar previsão para 5 dias">5 Dias</button>
+                        <button class="btn-day-filter" data-days="3" title="Mostrar previsão para 3 dias">3 Dias</button>
+                        <button class="btn-day-filter" data-days="1" title="Mostrar previsão para hoje">Hoje</button>
+                    </div>
+
+                    <div class="forecast-highlights-controls">
+                        <h4>Destaques:</h4>
+                        <label><input type="checkbox" id="highlight-rain"> Destacar Chuva</label>
+                        <label><input type="checkbox" id="highlight-cold" data-temp-threshold="10"> Frio (Abaixo 10°C)</label>
+                        <label><input type="checkbox" id="highlight-hot" data-temp-threshold="30"> Calor (Acima 30°C)</label>
+                    </div>
+                </div>
+
                 <div id="previsao-tempo-detalhada-resultado" class="weather-results-detailed">
-                    <!-- A previsão do tempo detalhada será exibida aqui pelo JavaScript -->
+                    <!-- A previsão do tempo DETALHADA será exibida aqui -->
+                    <p>Digite uma cidade e clique em "Ver Previsão Detalhada".</p>
                 </div>
             </div>
         </section>
         <!-- FIM DA SEÇÃO DE PREVISÃO DETALHADA -->
-
-         <hr>
-
+         
          <section id="controles-gerais">
              <h2>Controles Gerais</h2>
              <button id="limparStorageBtn" class="btn-danger">Limpar Toda a Garagem (LocalStorage)</button>

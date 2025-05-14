@@ -1,3 +1,4 @@
+
 # Garagem Inteligente Unificada v3.1 (Refatorado)
 
 ## O que é?
@@ -22,11 +23,14 @@ A aplicação foi construída usando **HTML**, **CSS** e **JavaScript** puro, co
     *   Permite ao usuário inserir uma cidade de destino.
     *   Busca e exibe a previsão do tempo *atual* para a cidade informada.
     *   Utiliza o endpoint "Current Weather Data" da API OpenWeatherMap. (Se esta funcionalidade estiver presente no HTML)
-*   **Planejador de Viagem com Previsão Detalhada (API Real - OpenWeatherMap):**
+*   **Planejador de Viagem com Previsão Detalhada Interativa (API Real - OpenWeatherMap):**
     *   Permite ao usuário inserir uma cidade de destino.
     *   Busca e exibe a previsão do tempo para os próximos 5 dias para a cidade informada.
     *   Utiliza o endpoint "5 day / 3 hour forecast" da API OpenWeatherMap.
     *   Processa os dados da API para mostrar um resumo diário: data, temperaturas mínima e máxima, descrição do tempo, ícone, umidade média e velocidade média do vento.
+    *   **Interatividade Adicionada (B2.P1.A4):**
+        *   **Filtro de Dias:** O usuário pode escolher visualizar a previsão para "Hoje", "Próximos 3 dias" ou "Próximos 5 dias" usando botões de filtro.
+        *   **Destaque de Condições:** O usuário pode ativar/desativar destaques visuais para dias com "Chuva", "Frio" (temperatura mínima abaixo de 10°C) ou "Calor" (temperatura máxima acima de 30°C) através de checkboxes. Os dias correspondentes terão um estilo diferenciado.
 
 ## Como Executar Localmente
 
@@ -34,7 +38,7 @@ A aplicação foi construída usando **HTML**, **CSS** e **JavaScript** puro, co
     *   Acesse [OpenWeatherMap](https://openweathermap.org/) e crie uma conta gratuita.
     *   Vá para a seção "API keys" no seu perfil e copie sua chave.
     *   Abra o arquivo `script.js`.
-    *   Encontre as constantes `OPENWEATHER_API_KEY` (para previsão atual, se estiver usando) e `OPENWEATHER_API_KEY_DETALHADA` (para previsão de 5 dias).
+    *   Encontre as constantes `OPENWEATHER_API_KEY` (para previsão atual) e `OPENWEATHER_API_KEY_DETALHADA` (para previsão de 5 dias).
     *   Substitua `"SUA_CHAVE_OPENWEATHERMAP_AQUI"` (ou o placeholder similar como `"32ad5f39fc17a3b18cec5953e7a3227e"` se for um exemplo que você não quer usar) pela sua chave real em AMBAS as constantes se for usar as duas funcionalidades, ou na constante relevante. Se for usar a mesma chave para ambas, pode usar uma só constante e referenciá-la nos dois locais. **É crucial que a chave `OPENWEATHER_API_KEY_DETALHADA` seja preenchida com uma chave válida para a funcionalidade de previsão detalhada funcionar.**
 
 2.  **Baixe o Código:**
@@ -73,4 +77,4 @@ Para as funcionalidades de previsão do tempo, a chave da API OpenWeatherMap é 
 Você pode testar a aplicação diretamente online aqui:
 
 **[Link da Aplicação Online](https://seu-link-de-deploy.vercel.app/)** <0xE2><0x86><0x90> *(Substitua pelo seu link Vercel/Netlify/etc. real após o deploy)*
-```
+--- END OF FILE README.txt ---
