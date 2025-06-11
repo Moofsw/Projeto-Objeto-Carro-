@@ -1,80 +1,90 @@
-
-# Garagem Inteligente Unificada v3.1 (Refatorado)
+# Garagem Inteligente Unificada v3.1 (Refatorado com Backend)
 
 ## O que é?
 
-Esta é uma aplicação web simples que simula uma garagem virtual. Você pode adicionar e gerenciar diferentes tipos de veículos:
+Esta é uma aplicação web que simula uma garagem virtual. O frontend é construído com HTML, CSS e JavaScript (orientado a objetos), e agora é servido e aprimorado por um **backend Node.js/Express**.
 
-*   **Carros Esportivos:** Com opção de ativar/desativar turbo.
-*   **Caminhões:** Com capacidade de carga para carregar e descarregar.
-
-A aplicação foi construída usando **HTML**, **CSS** e **JavaScript** puro, com foco em **Programação Orientada a Objetos (POO)** para organizar o código.
+*   **Frontend:** Permite adicionar, controlar e gerenciar carros esportivos e caminhões, agendar manutenções e planejar viagens com previsão do tempo real.
+*   **Backend:** Atua como uma API, fornecendo dados dinâmicos como dicas de manutenção e, no futuro, gerenciando a lógica de negócios da aplicação.
 
 ## Funcionalidades
 
-*   **Adicionar Veículos:** Coloque carros esportivos e caminhões na sua garagem.
-*   **Controlar Veículos:** Ligue, desligue, acelere e freie seus veículos.
-*   **Ações Especiais:** Ative o turbo nos carros ou carregue/descarregue carga nos caminhões.
-*   **Manutenção:** Adicione registros de manutenção (como troca de óleo) e veja o histórico de cada veículo.
-*   **Salvar Dados:** Sua garagem (veículos e históricos) fica salva no seu navegador usando `LocalStorage`.
-*   **Alertas:** Receba lembretes para manutenções agendadas para hoje ou amanhã.
-*   **Detalhes Extras do Veículo (API Simulada):** Busca informações adicionais sobre os veículos (FIPE, recall, dicas) de um arquivo JSON local (`dados_veiculos_api.json`).
-*   **Planejador de Viagem com Previsão do Tempo Atual (API Real - OpenWeatherMap):**
-    *   Permite ao usuário inserir uma cidade de destino.
-    *   Busca e exibe a previsão do tempo *atual* para a cidade informada.
-    *   Utiliza o endpoint "Current Weather Data" da API OpenWeatherMap. (Se esta funcionalidade estiver presente no HTML)
-*   **Planejador de Viagem com Previsão Detalhada Interativa (API Real - OpenWeatherMap):**
-    *   Permite ao usuário inserir uma cidade de destino.
-    *   Busca e exibe a previsão do tempo para os próximos 5 dias para a cidade informada.
-    *   Utiliza o endpoint "5 day / 3 hour forecast" da API OpenWeatherMap.
-    *   Processa os dados da API para mostrar um resumo diário: data, temperaturas mínima e máxima, descrição do tempo, ícone, umidade média e velocidade média do vento.
-    *   **Interatividade Adicionada (B2.P1.A4):**
-        *   **Filtro de Dias:** O usuário pode escolher visualizar a previsão para "Hoje", "Próximos 3 dias" ou "Próximos 5 dias" usando botões de filtro.
-        *   **Destaque de Condições:** O usuário pode ativar/desativar destaques visuais para dias com "Chuva", "Frio" (temperatura mínima abaixo de 10°C) ou "Calor" (temperatura máxima acima de 30°C) através de checkboxes. Os dias correspondentes terão um estilo diferenciado.
+*   **Gerenciamento de Veículos:** Adicione, controle (ligar/desligar, acelerar/frear) e remova veículos.
+*   **Ações Especiais:** Ative o turbo nos carros ou gerencie a carga dos caminhões.
+*   **Histórico de Manutenção:** Adicione e visualize o histórico de manutenção de cada veículo.
+*   **Persistência de Dados:** A garagem (veículos e históricos) é salva no `LocalStorage` do navegador.
+*   **Previsão do Tempo Detalhada:** Planeje viagens com uma previsão de 5 dias para qualquer cidade, com filtros interativos.
+*   **API Backend Própria:** Um servidor Node.js/Express que fornece dados adicionais para a aplicação.
+
+## API Endpoints do Backend
+
+Nosso servidor backend expõe os seguintes endpoints. A URL base para o servidor local é `http://localhost:4000`.
+
+---
+
+### 1. Dicas de Manutenção Gerais
+
+*   **Endpoint:** `GET /api/dicas-manutencao`
+*   **Descrição:** Retorna uma lista com dicas de manutenção aplicáveis a qualquer tipo de veículo.
+*   **Parâmetros:** Nenhum.
+*   **Exemplo de Resposta (JSON):**
+    ```json
+    [
+        { "id": 1, "dica": "Verifique o nível do óleo do motor regularmente." },
+        { "id": 2, "dica": "Calibre os pneus semanalmente, incluindo o estepe." },
+        { "id": 3, "dica": "Confira o fluido de arrefecimento e o nível da água do radiador." }
+    ]
+    ```
+
+---
+
+### 2. Dicas de Manutenção por Tipo de Veículo
+
+*   **Endpoint:** `GET /api/dicas-manutencao/:tipoVeiculo`
+*   **Descrição:** Retorna uma lista de dicas de manutenção específicas para o tipo de veículo informado na URL.
+*   **Parâmetros de Rota:**
+    *   `tipoVeiculo` (string): O tipo do veículo. Atualmente suporta `carro` e `caminhao` (não diferencia maiúsculas/minúsculas).
+*   **Exemplo de Resposta para `/api/dicas-manutencao/carro` (JSON):**
+    ```json
+    [
+        { "id": 10, "dica": "Faça o rodízio dos pneus a cada 10.000 km para um desgaste uniforme." },
+        { "id": 11, "dica": "Troque o filtro de ar do motor conforme recomendação do manual." }
+    ]
+    ```
+*   **Resposta de Erro (404 Not Found) para `/api/dicas-manutencao/moto`:**
+    ```json
+    {
+        "error": "Nenhuma dica encontrada para o tipo: moto"
+    }
+    ```
+
+---
 
 ## Como Executar Localmente
 
-1.  **Obtenha uma Chave da API OpenWeatherMap (Obrigatório para Previsão do Tempo):**
-    *   Acesse [OpenWeatherMap](https://openweathermap.org/) e crie uma conta gratuita.
-    *   Vá para a seção "API keys" no seu perfil e copie sua chave.
-    *   Abra o arquivo `script.js`.
-    *   Encontre as constantes `OPENWEATHER_API_KEY` (para previsão atual) e `OPENWEATHER_API_KEY_DETALHADA` (para previsão de 5 dias).
-    *   Substitua `"SUA_CHAVE_OPENWEATHERMAP_AQUI"` (ou o placeholder similar como `"32ad5f39fc17a3b18cec5953e7a3227e"` se for um exemplo que você não quer usar) pela sua chave real em AMBAS as constantes se for usar as duas funcionalidades, ou na constante relevante. Se for usar a mesma chave para ambas, pode usar uma só constante e referenciá-la nos dois locais. **É crucial que a chave `OPENWEATHER_API_KEY_DETALHADA` seja preenchida com uma chave válida para a funcionalidade de previsão detalhada funcionar.**
+### Pré-requisitos
+*   [Node.js](https://nodejs.org/) instalado (que inclui o `npm`).
 
-2.  **Baixe o Código:**
-    *   Clique em "Code" -> "Download ZIP" neste repositório e extraia os arquivos.
-    *   Ou, se tiver Git, clone o repositório.
+### Passos
+1.  **Baixe o Código:** Clone o repositório ou baixe o arquivo ZIP.
 
-3.  **Verifique a Estrutura dos Arquivos:**
-    *   Certifique-se de que os arquivos `index.html`, `style.css`, `script.js`, `manutencao.js`, `garagem.js`, e a pasta `Imagens` (com as imagens dos veículos e favicon) e a pasta `sons` (com os arquivos de áudio) estão na mesma pasta raiz do projeto.
-    *   O arquivo `dados_veiculos_api.json` também deve estar na pasta raiz.
+2.  **Instale as Dependências do Backend:**
+    *   Abra um terminal na pasta raiz do projeto.
+    *   Execute o comando:
+        ```bash
+        npm install
+        ```
+    *   Isso instalará o `express` e o `cors` listados no `package.json`.
 
-4.  **Abra o Arquivo `index.html`:**
+3.  **Inicie o Servidor Backend:**
+    *   No mesmo terminal, execute:
+        ```bash
+        node server.js
+        ```
+    *   Você verá uma mensagem indicando que o servidor está rodando na porta 4000. **Mantenha este terminal aberto.**
+
+4.  **Abra o Frontend:**
     *   Encontre o arquivo `index.html` na pasta do projeto.
-    *   **Dê um duplo clique** nesse arquivo. Ele vai abrir diretamente no seu navegador web padrão (Chrome, Firefox, Edge, etc.).
+    *   **Dê um duplo clique** nesse arquivo. Ele abrirá diretamente no seu navegador web padrão.
 
-Pronto! A Garagem Inteligente estará funcionando no seu navegador.
-
-## ALERTA DE SEGURANÇA IMPORTANTE SOBRE A API KEY
-
-Para as funcionalidades de previsão do tempo, a chave da API OpenWeatherMap é utilizada.
-
-**ATENÇÃO:** No contexto desta atividade didática, a chave da API é inserida diretamente no arquivo JavaScript (`script.js`). **Esta é uma prática INSEGURA e NUNCA deve ser feita em aplicações de produção que são publicadas na internet.**
-
-*   **Por que é inseguro?** Qualquer pessoa com acesso ao código fonte do seu site no navegador poderá ver e copiar sua chave de API. Isso pode levar ao uso indevido da sua chave, esgotamento da sua cota de requisições gratuitas e, em alguns casos, até custos financeiros se a API tiver um plano pago associado a um uso excessivo.
-
-*   **Qual a abordagem correta em produção?** A forma segura de usar chaves de API no frontend é através de um **backend (servidor) que atua como um proxy**.
-    1.  O frontend faz uma requisição para o SEU backend.
-    2.  O SEU backend, que armazena a chave da API de forma segura (ex: variáveis de ambiente), faz a requisição para a API externa (OpenWeatherMap).
-    3.  A API externa responde ao SEU backend.
-    4.  O SEU backend repassa a resposta para o frontend.
-    Desta forma, a chave da API nunca fica exposta no código do cliente (navegador).
-
-**Para esta atividade, a inclusão direta da chave no frontend é uma simplificação para focar nos aspectos de consumo da API e manipulação de dados. Tenha consciência deste risco.**
-
-## Ver Online
-
-Você pode testar a aplicação diretamente online aqui:
-
-**[Link da Aplicação Online](https://seu-link-de-deploy.vercel.app/)** <0xE2><0x86><0x90> *(Substitua pelo seu link Vercel/Netlify/etc. real após o deploy)*
---- END OF FILE README.txt ---
+Pronto! A Garagem Inteligente estará funcionando, com o frontend consumindo os dados fornecidos pelo seu backend local.

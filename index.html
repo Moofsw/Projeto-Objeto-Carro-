@@ -70,6 +70,28 @@
                  <li class="empty-list-placeholder">Verificando agendamentos...</li>
              </ul>
         </section>
+        
+        <hr>
+
+        <!-- NOVA SEÇÃO PARA DICAS DE MANUTENÇÃO DO BACKEND -->
+        <section id="dicas-manutencao">
+            <h2>Dicas de Manutenção do Servidor</h2>
+            <div class="dicas-container">
+                <div class="dicas-controls">
+                    <button id="buscarDicasGeraisBtn" class="btn-primary">Buscar Dicas Gerais</button>
+                    <div class="form-group-inline">
+                        <input type="text" id="tipoVeiculoDicaInput" placeholder="Digite 'carro' ou 'caminhao'">
+                        <button id="buscarDicasPorTipoBtn" class="btn-secondary">Buscar Dica por Tipo</button>
+                    </div>
+                </div>
+                <div id="dicasResultado" class="dicas-resultado-container">
+                    <p>Clique em um dos botões para ver as dicas do nosso servidor!</p>
+                </div>
+            </div>
+        </section>
+        <!-- FIM DA NOVA SEÇÃO -->
+
+        <hr>
 
         <div id="agendamentoModal" class="modal" aria-hidden="true">
             <div class="modal-content">
@@ -106,7 +128,7 @@
         </div>
         
         <hr>
-        <!-- SEÇÃO PARA PREVISÃO DO TEMPO DETALHADA (B2.P1.A3 / A4) -->
+        
         <section id="planejar-viagem-detalhada">
             <h2>Planejar Viagem com Previsão Detalhada</h2>
             <div class="planner-container">
@@ -133,12 +155,10 @@
                 </div>
 
                 <div id="previsao-tempo-detalhada-resultado" class="weather-results-detailed">
-                    <!-- A previsão do tempo DETALHADA será exibida aqui -->
                     <p>Digite uma cidade e clique em "Ver Previsão Detalhada".</p>
                 </div>
             </div>
         </section>
-        <!-- FIM DA SEÇÃO DE PREVISÃO DETALHADA -->
          
          <section id="controles-gerais">
              <h2>Controles Gerais</h2>
@@ -152,6 +172,7 @@
         <audio id="somDesligar" src="sons/desligar_motor.mp3" preload="auto"></audio>
     </div>
 
+    <!-- CORREÇÃO: Removido 'PastaJs/' dos caminhos abaixo -->
     <script src="manutencao.js" defer></script>
     <script src="garagem.js" defer></script>
     <script src="script.js" defer></script>
