@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require('cors'); // Importando o pacote CORS
 
 const app = express();
-const PORT = 3100;
+const PORT = 4000;
 
 // --- Habilitando o CORS para todas as rotas ---
 // Isso permite que seu frontend (mesmo em um domínio diferente, como file://)
@@ -46,13 +46,12 @@ app.get('/api/dicas-manutencao', (req, res) => {
     res.json(dicasManutencaoGerais);
 });
 
-// Endpoint para buscar dicas por tipo de veículo (parâmetro de rota)
-app.get('   ', (req, res) => {
+// Em server.js, CORRIGIDO
+app.get('/api/dicas-manutencao/:tipoVeiculo', (req, res) => {
     const { tipoVeiculo } = req.params;
     console.log(`LOG: Requisição recebida em /api/dicas-manutencao/${tipoVeiculo}`);
 
     const dicas = dicasPorTipo[tipoVeiculo.toLowerCase()]; // Busca case-insensitive
-
 
     if (dicas) {
         res.json(dicas);

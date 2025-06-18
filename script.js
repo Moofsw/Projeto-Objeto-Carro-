@@ -217,7 +217,8 @@ class Caminhao extends Vehicle {
 
 // --- VARIÁVEIS GLOBAIS E ESTADO DA UI ---
 
-const backendUrl = 'http://localhost:4000'; // URL do nosso backend Node.js
+// CORRIGIDO
+const backendUrl = 'https://projeto-objeto-carro.onrender.com'; // <-- USE A URL CORRETA DO SEU BACKEND NO RENDER
 let minhaGaragem;
 let globalStatusTimeout = null;
 let vehicleStatusTimeouts = {};
