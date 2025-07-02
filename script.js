@@ -554,3 +554,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     displayGlobalAlert("Garagem Inteligente pronta!", "success", 3000);
 });
+
+//a

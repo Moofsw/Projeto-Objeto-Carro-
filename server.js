@@ -70,3 +70,5 @@ app.listen(PORT, () => {
    console.log(`  - GET http://localhost:${PORT}/api/dicas-manutencao/carro`);
    console.log(`  - GET http://localhost:${PORT}/api/dicas-manutencao/caminhao`);
 });
+
+//a 
