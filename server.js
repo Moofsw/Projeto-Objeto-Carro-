@@ -1,74 +1,106 @@
+require('dotenv').config();
 const path = require("path");
 const express = require("express");
-const cors = require('cors'); // Importando o pacote CORS
+const cors = require('cors');
+const mongoose = require('mongoose');
 
 const app = express();
-const PORT = 4000;
+const PORT = 3001;
 
-// --- Habilitando o CORS para todas as rotas ---
-// Isso permite que seu frontend (mesmo em um domínio diferente, como file://)
-// faça requisições para este backend.
-app.use(cors());
+// --- Configuração da Conexão Robusta com o MongoDB ---
+const connectDB = async () => {
+  const mongoUri = process.env.MONGODB_URI;
 
-// --- Simulação de Banco de Dados em Memória ---
-const dicasManutencaoGerais = [
-    { id: 1, dica: "Verifique o nível do óleo do motor regularmente." },
-    { id: 2, dica: "Calibre os pneus semanalmente, incluindo o estepe." },
-    { id: 3, dica: "Confira o fluido de arrefecimento e o nível da água do radiador." },
-    { id: 4, dica: "Teste os freios e ouça por ruídos anormais." },
-    { id: 5, dica: "Verifique todas as luzes do veículo: faróis, lanternas, setas e luz de freio." }
-];
+  if (!mongoUri) {
+    console.error("❌ ERRO FATAL: A variável de ambiente MONGODB_URI não está definida.");
+    console.error("A aplicação não pode conectar ao banco de dados. Verifique seu arquivo .env ou as variáveis de ambiente no seu provedor de hospedagem (Render).");
+    process.exit(1); // Encerra o processo se a URI estiver ausente
+  }
 
-const dicasPorTipo = {
-    carro: [
-        { id: 10, dica: "Faça o rodízio dos pneus a cada 10.000 km para um desgaste uniforme." },
-        { id: 11, dica: "Troque o filtro de ar do motor conforme recomendação do manual." },
-        { id: 12, dica: "Verifique o alinhamento e balanceamento das rodas anualmente." }
-    ],
-    caminhao: [
-        { id: 20, dica: "Inspecione a quinta roda e lubrifique-a conforme o uso." },
-        { id: 21, dica: "Verifique o sistema pneumático de freios diariamente antes de iniciar a viagem." },
-        { id: 22, dica: "Fique atento ao tacógrafo e mantenha o disco ou fita em dia." }
-    ]
+  try {
+    // Evita múltiplas conexões. Se já estiver conectado ou conectando, não faz nada.
+    if (mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
+      console.log('✅ Mongoose já está conectado ou conectando.');
+      return;
+    }
+
+    await mongoose.connect(mongoUri);
+    console.log('🚀 Conectado com sucesso ao MongoDB Atlas!');
+
+    // Opcional: Ouvir por eventos de conexão para logs mais detalhados
+    mongoose.connection.on('disconnected', () => {
+      console.warn('⚠️ Mongoose foi desconectado!');
+    });
+    mongoose.connection.on('error', (err) => {
+      console.error('❌ Erro na conexão com o Mongoose:', err);
+    });
+
+  } catch (err) {
+    console.error('❌ ERRO FATAL: Falha ao conectar ao MongoDB. Verifique sua string de conexão, acesso de rede no Atlas e credenciais.');
+    console.error(err.message);
+    process.exit(1); // Encerra o processo em caso de falha na conexão inicial
+  }
 };
 
-
-// --- Configurações do Express ---
-app.use(express.static(path.join(__dirname))); // Servir arquivos estáticos da raiz do projeto  
-app.use(express.json()); // Middleware para parsear JSON no corpo das requisições
+// Chama a função para conectar ao banco de dados ao iniciar o servidor.
+connectDB();
 
 
-// --- ENDPOINTS DA API ---
-
-// Endpoint para buscar todas as dicas de manutenção gerais
-app.get('/api/dicas-manutencao', (req, res) => {
-    console.log("LOG: Requisição recebida em /api/dicas-manutencao");
-    res.json(dicasManutencaoGerais);
+// Modelos do MongoDB
+const DicaSchema = new mongoose.Schema({
+  id: Number,
+  dica: String,
+  tipo: { type: String, required: false } // 'geral', 'carro', 'caminhao'
 });
 
-// Em server.js, CORRIGIDO
-app.get('/api/dicas-manutencao/:tipoVeiculo', (req, res) => {
+const Dica = mongoose.model('Dica', DicaSchema);
+
+// --- Middlewares ---
+app.use(cors());
+app.use(express.static(path.join(__dirname)));
+app.use(express.json());
+
+// --- Rotas da API ---
+
+// Rota para buscar todas as dicas
+app.get('/api/dicas-manutencao', async (req, res) => {
+  try {
+    const dicas = await Dica.find({ tipo: 'geral' });
+    res.json(dicas);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Rota para buscar dicas por tipo de veículo
+app.get('/api/dicas-manutencao/:tipoVeiculo', async (req, res) => {
+  try {
     const { tipoVeiculo } = req.params;
-    console.log(`LOG: Requisição recebida em /api/dicas-manutencao/${tipoVeiculo}`);
-
-    const dicas = dicasPorTipo[tipoVeiculo.toLowerCase()]; // Busca case-insensitive
-
-    if (dicas) {
-        res.json(dicas);
-    } else {
-        res.status(404).json({ error: `Nenhuma dica encontrada para o tipo: ${tipoVeiculo}` });
+    const dicas = await Dica.find({ tipo: tipoVeiculo.toLowerCase() });
+    
+    if (dicas.length === 0) {
+      return res.status(404).json({ error: `Nenhuma dica encontrada para o tipo: ${tipoVeiculo}` });
     }
+    
+    res.json(dicas);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// Rota para adicionar nova dica (exemplo)
+app.post('/api/dicas-manutencao', async (req, res) => {
+  try {
+    const novaDica = new Dica(req.body);
+    await novaDica.save();
+    res.status(201).json(novaDica);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
 
 // --- Inicialização do Servidor ---
 app.listen(PORT, () => {
-   console.log(`Servidor rodando e ouvindo na porta ${PORT}`);
-   console.log(`Acesse em http://localhost:${PORT}`);
-   console.log("Endpoints de API disponíveis:");
-   console.log(`  - GET http://localhost:${PORT}/api/dicas-manutencao`);
-   console.log(`  - GET http://localhost:${PORT}/api/dicas-manutencao/carro`);
-   console.log(`  - GET http://localhost:${PORT}/api/dicas-manutencao/caminhao`);
+  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`Acesse em http://localhost:${PORT}`);
 });
-
-//a 
