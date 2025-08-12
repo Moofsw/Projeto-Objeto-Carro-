@@ -79,4 +79,99 @@ app.get('/api/dicas-manutencao/:tipoVeiculo', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
   console.log(`Acesse em http://localhost:${PORT}`);
+
+  require('dotenv').config();
+const path = require("path");
+const express = require("express");
+const cors = require('cors');
+const mongoose = require('mongoose');
+
+// --- IMPORTAÇÃO DOS MODELOS ---
+const Dica = require('./models/Dica');
+const Veiculo = require('./models/Veiculo');
+const Manutencao = require('./models/Manutencao'); // <-- NOVO: Importa o modelo de Manutenção
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+const connectDB = async () => { /* ... (código de conexão com DB) ... */ };
+connectDB();
+
+app.use(cors());
+app.use(express.static(path.join(__dirname)));
+app.use(express.json());
+
+// ======================================================
+// --- ROTAS PARA A API DE VEÍCULOS (CRUD) ---
+// ======================================================
+app.get('/api/veiculos', async (req, res) => { /* ... (código existente) ... */ });
+app.post('/api/veiculos', async (req, res) => { /* ... (código existente) ... */ });
+
+// ================================================================
+// --- NOVAS ROTAS PARA SUB-RECURSOS DE MANUTENÇÃO ---
+// ================================================================
+
+// Rota POST para CRIAR uma nova manutenção para um veículo específico
+app.post('/api/veiculos/:veiculoId/manutencoes', async (req, res) => {
+    try {
+        const { veiculoId } = req.params;
+
+        // 1. Valida se o veículo com o ID fornecido existe
+        const veiculoExistente = await Veiculo.findById(veiculoId);
+        if (!veiculoExistente) {
+            return res.status(404).json({ error: 'Veículo não encontrado.' });
+        }
+
+        // 2. Cria a nova manutenção, associando o ID do veículo
+        const novaManutencaoData = {
+            ...req.body,
+            veiculo: veiculoId
+        };
+        const manutencaoCriada = await Manutencao.create(novaManutencaoData);
+
+        console.log(`[Servidor] Manutenção criada para o veículo ${veiculoId}:`, manutencaoCriada);
+        res.status(201).json(manutencaoCriada);
+
+    } catch (error) {
+        console.error("[Servidor] Erro ao criar manutenção:", error);
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({ error: messages.join(' ') });
+        }
+        res.status(500).json({ error: 'Erro interno ao criar manutenção.' });
+    }
 });
+
+// Rota GET para LER todas as manutenções de um veículo específico
+app.get('/api/veiculos/:veiculoId/manutencoes', async (req, res) => {
+    try {
+        const { veiculoId } = req.params;
+
+        // (Opcional, mas boa prática) Valida se o veículo existe
+        const veiculoExistente = await Veiculo.findById(veiculoId);
+        if (!veiculoExistente) {
+            return res.status(404).json({ error: 'Veículo não encontrado.' });
+        }
+
+        // Busca todas as manutenções que referenciam este veículo, ordenadas pela mais recente
+        const manutenções = await Manutencao.find({ veiculo: veiculoId }).sort({ data: -1 });
+
+        res.json(manutenções);
+
+    } catch (error) {
+        console.error(`[Servidor] Erro ao buscar manutenções para o veículo ${req.params.veiculoId}:`, error);
+        res.status(500).json({ error: 'Erro interno ao buscar manutenções.' });
+    }
+});
+
+
+// --- Rotas da API de Dicas (permanecem as mesmas) ---
+app.get('/api/dicas-manutencao', async (req, res) => { /* ... */ });
+app.get('/api/dicas-manutencao/:tipoVeiculo', async (req, res) => { /* ... */ });
+
+app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Acesse em http://localhost:${PORT}`);
+});
+});
+

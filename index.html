@@ -179,4 +179,44 @@
 </body>
 </html>
 
+    <!-- Dentro do loop que gera o .veiculo-item em script.js, a seguinte estrutura será gerada -->
+<!-- Exemplo de como a nova seção de manutenção será inserida no card do veículo -->
+
+<div class="veiculo-item" id="veiculo-XYZ" data-tipo="CarroEsportivo">
+    <!-- ... (informações do veículo e botões de ação existentes) ... -->
+    
+    <!-- Seção de Histórico de Manutenção (LocalStorage - Frontend) -->
+    <div class="historico-manutencao">
+        <h4>Histórico de Manutenção (Local)</h4>
+        <ul><!-- ... (lista gerada pelo getHistoricoFormatado()) ... --></ul>
+    </div>
+
+    <!-- NOVA SEÇÃO PARA MANUTENÇÕES DO BANCO DE DADOS -->
+    <div class="manutencao-db-section">
+        <button class="btn-toggle-manutencao" onclick="toggleManutencoesDB('XYZ')">
+            Exibir/Ocultar Manutenções (DB)
+        </button>
+        <div class="manutencao-db-content" id="manutencoes-db-content-XYZ" style="display: none;">
+            <h4>Manutenções (Banco de Dados)</h4>
+            <div id="manutencoes-lista-XYZ" class="manutencao-lista-container">
+                <!-- A lista de manutenções será carregada aqui -->
+            </div>
+            
+            <form class="form-add-manutencao" id="form-manutencao-XYZ" onsubmit="adicionarManutencao(event, 'XYZ')">
+                <h5>Adicionar Nova Manutenção</h5>
+                <div class="form-group">
+                    <input type="text" name="descricaoServico" placeholder="Descrição do Serviço" required>
+                </div>
+                <div class="form-group">
+                    <input type="number" name="custo" placeholder="Custo (R$)" step="0.01" min="0" required>
+                </div>
+                 <div class="form-group">
+                    <input type="number" name="quilometragem" placeholder="Quilometragem" min="0">
+                </div>
+                <button type="submit" class="btn-primary btn-small">Salvar Manutenção</button>
+            </form>
+        </div>
+    </div>
+</div>
+
 //a

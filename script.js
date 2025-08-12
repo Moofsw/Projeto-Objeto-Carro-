@@ -553,6 +553,112 @@ document.addEventListener('DOMContentLoaded', () => {
     // ... (mesma lógica da versão anterior)
 
     displayGlobalAlert("Garagem Inteligente pronta!", "success", 3000);
+
+// ================================================================
+// --- NOVAS FUNÇÕES: GESTÃO DE MANUTENÇÃO VIA BACKEND ---
+// ================================================================
+
+/**
+ * Alterna a visibilidade da seção de manutenções do banco de dados e carrega os dados se for a primeira vez.
+ * @param {string} veiculoId O ID do veículo.
+ */
+async function toggleManutencoesDB(veiculoId) {
+    const contentDiv = document.getElementById(`manutencoes-db-content-${veiculoId}`);
+    if (!contentDiv) return;
+
+    const isVisible = contentDiv.style.display === 'block';
+    if (isVisible) {
+        contentDiv.style.display = 'none';
+    } else {
+        contentDiv.style.display = 'block';
+        // Carrega os dados apenas se a lista ainda não foi populada
+        if (!contentDiv.dataset.loaded) {
+            await carregarManutencoes(veiculoId);
+            contentDiv.dataset.loaded = 'true';
+        }
+    }
+}
+
+
+/**
+ * Carrega e exibe as manutenções de um veículo específico a partir do backend.
+ * @param {string} veiculoId O ID do veículo.
+ */
+async function carregarManutencoes(veiculoId) {
+    const listaContainer = document.getElementById(`manutencoes-lista-${veiculoId}`);
+    if (!listaContainer) return;
+
+    listaContainer.innerHTML = '<p class="loading-message">Carregando manutenções...</p>';
+
+    try {
+        const response = await fetch(`${backendUrl}/api/veiculos/${veiculoId}/manutencoes`);
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || `Erro ${response.status}`);
+        }
+        const manutencoes = await response.json();
+
+        if (manutencoes.length === 0) {
+            listaContainer.innerHTML = '<p class="empty-list-placeholder">Nenhum registro de manutenção no banco de dados.</p>';
+            return;
+        }
+
+        let html = '<ul>';
+        manutencoes.forEach(m => {
+            const dataFormatada = new Date(m.data).toLocaleDateString('pt-BR');
+            const custoFormatado = m.custo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            html += `<li><strong>${m.descricaoServico}</strong> em ${dataFormatada} - ${custoFormatado} (KM: ${m.quilometragem || 'N/A'})</li>`;
+        });
+        html += '</ul>';
+        listaContainer.innerHTML = html;
+
+    } catch (error) {
+        console.error("Erro ao carregar manutenções:", error);
+        listaContainer.innerHTML = `<p class="error-message">Falha ao carregar dados. (${error.message})</p>`;
+    }
+}
+
+/**
+ * Adiciona uma nova manutenção para um veículo via API.
+ * @param {Event} event O evento de submissão do formulário.
+ * @param {string} veiculoId O ID do veículo.
+ */
+async function adicionarManutencao(event, veiculoId) {
+    event.preventDefault();
+    const form = document.getElementById(`form-manutencao-${veiculoId}`);
+    if (!form) return;
+
+    const formData = new FormData(form);
+    const dadosFormulario = {
+        descricaoServico: formData.get('descricaoServico'),
+        custo: parseFloat(formData.get('custo')),
+        quilometragem: parseInt(formData.get('quilometragem'), 10) || 0
+    };
+
+    try {
+        const response = await fetch(`${backendUrl}/api/veiculos/${veiculoId}/manutencoes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dadosFormulario)
+        });
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || 'Erro ao salvar manutenção');
+        }
+
+        displayGlobalAlert('Manutenção salva com sucesso no banco de dados!', 'success');
+        form.reset();
+        await carregarManutencoes(veiculoId); // Recarrega a lista para mostrar a nova adição
+
+    } catch (error) {
+        console.error("Erro ao adicionar manutenção:", error);
+        displayGlobalAlert(`Erro: ${error.message}`, 'error');
+    }
+}
+
+// Nota: A função renderizarGaragem() precisa ser ajustada para incluir
+// os novos elementos HTML e os handlers de evento (`onclick`, `onsubmit`).
 });
 
 //a
