@@ -661,4 +661,79 @@ async function adicionarManutencao(event, veiculoId) {
 // os novos elementos HTML e os handlers de evento (`onclick`, `onsubmit`).
 });
 
-//a
+// script.js
+// ...
+function renderizarGaragem() {
+    // ... (código existente da função)
+
+    veiculos.forEach((v, index) => {
+        // ... (código existente para imagem, veiculo-info, status-veiculo e button-group-veiculo)
+
+        // Adicionar a seção de Manutenções do Banco de Dados aqui
+        const veiculoCardHtml = `
+            <div class="veiculo-item" id="veiculo-${v.id}" data-tipo="${v._tipoVeiculo}">
+                <img src="${imagePath}" alt="Imagem de ${v.modelo || 'Veículo'}" loading="lazy" onerror="this.onerror=null; this.src='Imagens/default-vehicle.png'; this.alt='Imagem padrão';">
+                <div class="veiculo-info">
+                    <p><strong>${v.modelo || 'Sem Modelo'} (${v.cor || 'Sem Cor'})</strong></p>
+                    <p><span class="detail-label">Status:</span> <span class="detail-value">${v.ligado ? 'Ligado' : 'Desligado'}</span></p>
+                    <p><span class="detail-label">Velocidade:</span> <span class="detail-value">${velocidadeFormatada} km/h</span></p>
+                    ${isCarroEsportivo ? `<p><span class="detail-label">Turbo:</span> <span class="detail-value">${turboStatus}</span></p>` : ''}
+                    ${isCaminhao ? `<p><span class="detail-label">Carga:</span> <span class="detail-value">${cargaAtualFormatada} / ${capacidadeCargaFormatada} kg</span></p>` : ''}
+                </div>
+                <p id="status-${v.id}" class="status-veiculo" data-status-type="info" aria-live="polite"></p>
+                <div class="button-group-veiculo">
+                    <button class="btn-veiculo-ligar" onclick="executarAcaoVeiculo('${v.id}', 'ligar')" ${v.ligado ? 'disabled' : ''} title="Ligar">Ligar</button>
+                    <button class="btn-veiculo-desligar" onclick="executarAcaoVeiculo('${v.id}', 'desligar')" ${!v.ligado || v.velocidade > 0 ? 'disabled' : ''} title="Desligar">Desligar</button>
+                    <button class="btn-veiculo-acelerar" onclick="executarAcaoVeiculo('${v.id}', 'acelerar')" ${!v.ligado ? 'disabled' : ''} title="Acelerar">Acelerar</button>
+                    <button class="btn-veiculo-frear" onclick="executarAcaoVeiculo('${v.id}', 'frear')" ${!v.ligado || v.velocidade <= 0 ? 'disabled' : ''} title="Frear">Frear</button>
+                    ${isCarroEsportivo ? `
+                        <button class="btn-veiculo-turbo-on" onclick="executarAcaoVeiculo('${v.id}', 'ativarTurbo')" ${!v.ligado || v.turboAtivado ? 'disabled' : ''} title="Turbo ON">Turbo ON</button>
+                        <button class="btn-veiculo-turbo-off" onclick="executarAcaoVeiculo('${v.id}', 'desativarTurbo')" ${!v.ligado || !v.turboAtivado ? 'disabled' : ''} title="Turbo OFF">Turbo OFF</button>
+                    ` : ''}
+                    ${isCaminhao ? `
+                        <button class="btn-veiculo-carregar" onclick="executarAcaoVeiculo('${v.id}', 'carregar', 1000)" ${(typeof v.cargaAtual !== 'number' || typeof v.capacidadeCarga !== 'number' || v.cargaAtual >= v.capacidadeCarga) ? 'disabled' : ''} title="Carregar">Carregar</button>
+                        <button class="btn-veiculo-descarregar" onclick="executarAcaoVeiculo('${v.id}', 'descarregar', 500)" ${(typeof v.cargaAtual !== 'number' || v.cargaAtual <= 0) ? 'disabled' : ''} title="Descarregar">Descarregar</button>
+                    ` : ''}
+                    <button class="btn-veiculo-agendar" onclick="mostrarFormAgendamento('${v.id}')" title="Histórico/Agendar">Histórico/Agendar</button>
+                    <button class="btn-detalhes-api" onclick="mostrarDetalhesVeiculo('${v.id}')" id="btn-detalhes-${v.id}" title="Detalhes Extras">Ver Detalhes Extras</button>
+                    <button class="btn-remover" onclick="removerVeiculoDaGaragem('${v.id}')" title="Remover">Remover</button>
+                </div>
+                <div class="detalhes-api-resultado" id="detalhes-${v.id}" aria-live="polite" style="display: none;"></div>
+                <div class="historico-manutencao">
+                    <h4>Histórico de Manutenção (Local):</h4>
+                    <ul>${historicoHtml}</ul>
+                </div>
+
+                <!-- NOVA SEÇÃO PARA MANUTENÇÕES DO BANCO DE DADOS -->
+                <div class="manutencao-db-section">
+                    <button class="btn-toggle-manutencao" onclick="toggleManutencoesDB('${v.id}')">
+                        Exibir/Ocultar Manutenções (DB)
+                    </button>
+                    <div class="manutencao-db-content" id="manutencoes-db-content-${v.id}" style="display: none;">
+                        <h4>Manutenções (Banco de Dados)</h4>
+                        <div id="manutencoes-lista-${v.id}" class="manutencao-lista-container">
+                            <p class="empty-list-placeholder">Clique para carregar manutenções do DB...</p>
+                        </div>
+                        
+                        <form class="form-add-manutencao" id="form-manutencao-${v.id}" onsubmit="adicionarManutencao(event, '${v.id}')">
+                            <h5>Adicionar Nova Manutenção</h5>
+                            <div class="form-group">
+                                <input type="text" name="descricaoServico" placeholder="Descrição do Serviço" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="number" name="custo" placeholder="Custo (R$)" step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="number" name="quilometragem" placeholder="Quilometragem" min="0">
+                            </div>
+                            <button type="submit" class="btn-primary btn-small">Salvar Manutenção</button>
+                        </form>
+                    </div>
+                </div>
+            </div>`;
+        
+        // ... (resto da lógica para adicionar carrosHtml ou caminhoesHtml)
+    });
+
+    // ... (resto da função renderizarGaragem)
+}
