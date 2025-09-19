@@ -251,5 +251,3 @@ app.get('/api/veiculos/:veiculoId/manutencoes', async (req, res) => {
     }
 });
 
-// ... (app.listen e outras rotas existentes)   
-

@@ -1,32 +1,47 @@
 // models/Veiculo.js
 const mongoose = require('mongoose');
 
-// 1. Definir o Schema (a "planta" dos documentos na coleção 'veiculos')
-// Isto é onde aplicamos a modelagem de dados e validações.
 const veiculoSchema = new mongoose.Schema({
-    placa: { 
-        type: String, 
-        required: [true, 'A placa é obrigatória.'], // Validação: obrigatório
-        unique: true, // Validação: não pode haver placas duplicadas
+    placa: {
+        type: String,
+        required: [true, 'A placa é obrigatória.'],
+        unique: true,
         uppercase: true,
-        trim: true // Remove espaços em branco do início e fim
+        trim: true
     },
-    marca: { type: String, required: [true, 'A marca é obrigatória.'] },
-    modelo: { type: String, required: [true, 'O modelo é obrigatório.'] },
-    ano: { 
-        type: Number, 
+    marca: { 
+        type: String, 
+        required: [true, 'A marca é obrigatória.'] 
+    },
+    modelo: { 
+        type: String, 
+        required: [true, 'O modelo é obrigatório.'] 
+    },
+    ano: {
+        type: Number,
         required: [true, 'O ano é obrigatório.'],
-        min: [1900, 'O ano deve ser no mínimo 1900.'], // Validação: valor mínimo
-        max: [new Date().getFullYear() + 1, 'O ano não pode ser no futuro.'] // Validação: valor máximo
+        min: [1900, 'O ano deve ser no mínimo 1900.'],
+        max: [new Date().getFullYear() + 1, 'O ano não pode ser no futuro.']
     },
-    cor: { type: String }
-}, { 
-    timestamps: true // Adiciona os campos createdAt e updatedAt automaticamente
+    cor: { 
+        type: String,
+        required: [true, 'A cor é obrigatória.']
+    },
+    tipo: { // 'CarroEsportivo' ou 'Caminhao'
+        type: String,
+        required: true,
+        enum: ['CarroEsportivo', 'Caminhao']
+    },
+    // Propriedades específicas podem ser adicionadas aqui
+    capacidadeCarga: {
+        type: Number,
+        // Só é obrigatório se o tipo for 'Caminhao'
+        required: function() { return this.tipo === 'Caminhao'; }
+    }
+}, {
+    timestamps: true // Adiciona createdAt e updatedAt
 });
 
-// 2. Criar o Modelo a partir do Schema
-// O Modelo é a interface que usamos no nosso código para realizar as operações CRUD.
-// É como uma classe que representa a coleção no MongoDB.
 const Veiculo = mongoose.model('Veiculo', veiculoSchema);
 
 module.exports = Veiculo;
