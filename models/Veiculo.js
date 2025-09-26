@@ -1,4 +1,3 @@
-// models/Veiculo.js
 const mongoose = require('mongoose');
 
 const veiculoSchema = new mongoose.Schema({
@@ -37,6 +36,12 @@ const veiculoSchema = new mongoose.Schema({
         type: Number,
         // Só é obrigatório se o tipo for 'Caminhao'
         required: function() { return this.tipo === 'Caminhao'; }
+    },
+    // CAMPO MODIFICADO/ADICIONADO
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', // A referência ao modelo 'User'
+      required: [true, 'O veículo precisa estar associado a um usuário.']
     }
 }, {
     timestamps: true // Adiciona createdAt e updatedAt
