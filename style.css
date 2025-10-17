@@ -824,5 +824,142 @@ button:disabled {
   h2 { font-size: 1.5em; }
   .adicionar-container { grid-template-columns: 1fr; }
 }
+/* --- Controle de Visibilidade --- */
+.hidden {
+    display: none !important;
+}
 
-/* ... (resto dos estilos existentes) ... */
+/* --- Estilos para a Página de Login (auth-view) --- */
+#auth-view {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--body-bg, #f0f2f5);
+    padding: 20px;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 950px;
+    background-color: var(--white-color, #ffffff);
+    padding: 30px 40px;
+    border-radius: var(--border-radius-lg, 12px);
+    box-shadow: var(--card-shadow, 0 8px 30px rgba(0, 0, 0, 0.1));
+    text-align: center;
+}
+
+.auth-container h1 {
+    font-size: 2.5em;
+    border-bottom: none;
+    margin-bottom: 10px;
+    color: var(--dark-color);
+}
+
+.auth-container p {
+    color: var(--text-muted, #6c757d);
+    margin-bottom: 30px;
+    font-size: 1.1em;
+}
+
+.auth-forms-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    border-top: 1px solid var(--light-border, #dee2e6);
+    padding-top: 30px;
+}
+
+.form-wrapper {
+    text-align: left;
+}
+
+.form-wrapper h2 {
+    font-size: 1.5em;
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 20px;
+    color: var(--primary-darker);
+}
+
+.form-wrapper label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-wrapper .btn-primary, .form-wrapper .btn-secondary {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    font-size: 1em;
+}
+
+.status-message {
+    margin-top: 25px;
+    padding: 12px;
+    border-radius: var(--border-radius-base, 8px);
+    font-weight: 600;
+    display: none; /* Começa escondido */
+}
+.status-message.error {
+    display: block;
+    background-color: var(--danger-light, #f8d7da);
+    color: var(--danger-dark, #721c24);
+}
+.status-message.success {
+    display: block;
+    background-color: var(--success-light, #d4edda);
+    color: var(--success-dark, #155724);
+}
+
+#garage-view .container {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 20px 40px;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    background-color: var(--white-color, #ffffff);
+    border-bottom: 1px solid var(--light-border, #dee2e6);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.app-header .app-title {
+    font-size: 1.8em;
+    margin: 0;
+    border: none;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Media Query para telas menores */
+@media (max-width: 768px) {
+    .auth-forms-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .app-header {
+        flex-direction: column;
+        gap: 10px;
+        padding: 15px;
+    }
+    #garage-view .container {
+        padding: 15px;
+    }
+}

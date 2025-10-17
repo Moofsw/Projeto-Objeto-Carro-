@@ -3,220 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garagem Inteligente - v3.1 Refatorado</title>
+    <title>Garagem Inteligente</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="Imagens/favicon.ico" type="image/x-icon">
 </head>
 <body>
-    <div class="container">
-        <h1>Garagem Inteligente Unificada <span>v3.1 Refatorado</span></h1>
-        <div id="globalStatus" role="alert"></div>
 
-        <section id="adicionar-veiculos">
-            <h2>Adicionar Novo Veículo</h2>
-            <div class="adicionar-container">
-                <div class="form-adicionar">
-                    <h3>Carro Esportivo</h3>
-                    <div class="form-group">
-                        <label for="modeloEsportivo">Modelo:</label>
-                        <input type="text" id="modeloEsportivo" placeholder="Ex: Ferrari F8 Tributo" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="corEsportivo">Cor:</label>
-                        <input type="text" id="corEsportivo" placeholder="Ex: Rosso Corsa" required>
-                    </div>
-                    <button id="criarCarroEsportivoBtn" class="btn-primary">Adicionar Carro</button>
+    <!-- ====================================================== -->
+    <!-- =========      VISÃO DE AUTENTICAÇÃO         ========= -->
+    <!-- ====================================================== -->
+    <div id="auth-view">
+        <div class="auth-container">
+            <h1>Garagem Inteligente</h1>
+            <p>Faça login ou registre-se para gerenciar seus veículos de forma inteligente.</p>
+            
+            <div class="auth-forms-container">
+                <!-- Formulário de Login -->
+                <div class="form-wrapper">
+                    <h2>Login</h2>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="loginEmail">Email</label>
+                            <input type="email" id="loginEmail" placeholder="seu@email.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Senha</label>
+                            <input type="password" id="loginPassword" placeholder="Sua senha" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Entrar</button>
+                    </form>
                 </div>
-                <div class="form-adicionar">
-                    <h3>Caminhão</h3>
-                    <div class="form-group">
-                        <label for="modeloCaminhao">Modelo:</label>
-                        <input type="text" id="modeloCaminhao" placeholder="Ex: Scania R450" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="corCaminhao">Cor:</label>
-                        <input type="text" id="corCaminhao" placeholder="Ex: Branco" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="capacidadeCaminhao">Capacidade de Carga (kg):</label>
-                        <input type="number" id="capacidadeCaminhao" placeholder="Ex: 29000" min="0" value="10000" required>
-                         <small>Peso máximo que o caminhão pode carregar.</small>
-                    </div>
-                    <button id="criarCaminhaoBtn" class="btn-primary">Adicionar Caminhão</button>
-                </div>
-            </div>
-        </section>
 
-        <hr>
-
-        <section id="garagem-display">
-            <h2>Veículos na Garagem</h2>
-            <div id="listaCarros">
-                <h3>Carros Esportivos</h3>
-                 <div class="empty-list-placeholder">Nenhum carro esportivo na garagem.</div>
-            </div>
-            <hr class="section-divider">
-            <div id="listaCaminhoes">
-                 <h3>Caminhões</h3>
-                 <div class="empty-list-placeholder">Nenhum caminhão na garagem.</div>
-            </div>
-        </section>
-
-        <hr>
-
-        <section id="agendamentos">
-             <h2>Próximos Agendamentos</h2>
-             <ul id="agendamentosFuturosLista">
-                 <li class="empty-list-placeholder">Verificando agendamentos...</li>
-             </ul>
-        </section>
-        
-        <hr>
-
-        <!-- NOVA SEÇÃO PARA DICAS DE MANUTENÇÃO DO BACKEND -->
-        <section id="dicas-manutencao">
-            <h2>Dicas de Manutenção do Servidor</h2>
-            <div class="dicas-container">
-                <div class="dicas-controls">
-                    <button id="buscarDicasGeraisBtn" class="btn-primary">Buscar Dicas Gerais</button>
-                    <div class="form-group-inline">
-                        <input type="text" id="tipoVeiculoDicaInput" placeholder="Digite 'carro' ou 'caminhao'">
-                        <button id="buscarDicasPorTipoBtn" class="btn-secondary">Buscar Dica por Tipo</button>
-                    </div>
-                </div>
-                <div id="dicasResultado" class="dicas-resultado-container">
-                    <p>Clique em um dos botões para ver as dicas do nosso servidor!</p>
+                <!-- Formulário de Registro -->
+                <div class="form-wrapper">
+                    <h2>Não tem uma conta? Registre-se!</h2>
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <label for="registerName">Nome</label>
+                            <input type="text" id="registerName" placeholder="Seu nome" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerEmail">Email</label>
+                            <input type="email" id="registerEmail" placeholder="seu@email.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerPassword">Senha</label>
+                            <input type="password" id="registerPassword" placeholder="Crie uma senha forte" required>
+                        </div>
+                        <button type="submit" class="btn-secondary">Registrar</button>
+                    </form>
                 </div>
             </div>
-        </section>
-        <!-- FIM DA NOVA SEÇÃO -->
-
-        <hr>
-
-        <div id="agendamentoModal" class="modal" aria-hidden="true">
-            <div class="modal-content">
-                <span class="close-button" title="Fechar (Esc)" aria-label="Fechar Janela Modal">×</span>
-                <h3 id="agendamentoTituloVeiculo">Histórico / Agendar Manutenção</h3>
-                <form id="formAgendamento" novalidate>
-                     <h4>Adicionar Novo Registro / Agendamento</h4>
-                     <input type="hidden" id="agendamentoVeiculoId">
-                    <div class="form-group">
-                        <label for="agendamentoData">Data e Hora:</label>
-                        <input type="datetime-local" id="agendamentoData" required aria-describedby="dataHelp">
-                        <small id="dataHelp">Data e hora da manutenção (realizada ou agendada).</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="agendamentoTipo">Tipo de Serviço:</label>
-                        <input type="text" id="agendamentoTipo" placeholder="Ex: Troca de óleo, Revisão completa" required>
-                    </div>
-                     <div class="form-group">
-                        <label for="agendamentoCusto">Custo (R$):</label>
-                        <input type="number" id="agendamentoCusto" placeholder="0.00" step="0.01" min="0" required aria-describedby="custoHelp">
-                         <small id="custoHelp">Custo do serviço (use 0 se não aplicável).</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="agendamentoDescricao">Descrição / Observações:</label>
-                        <textarea id="agendamentoDescricao" rows="3" placeholder="Detalhes adicionais (peças, km, etc.)" aria-describedby="descHelp"></textarea>
-                         <small id="descHelp">Opcional: Informe detalhes extras sobre o serviço.</small>
-                    </div>
-                    <div class="button-group">
-                         <button type="button" class="btn-secondary">Cancelar</button>
-                        <button type="submit" class="btn-primary">Salvar Registro</button>
-                    </div>
-                </form>
-            </div>
+            
+            <div id="auth-status" class="status-message" role="alert"></div>
         </div>
-        
-        <hr>
-        
-        <section id="planejar-viagem-detalhada">
-            <h2>Planejar Viagem com Previsão Detalhada</h2>
-            <div class="planner-container">
-                <div class="form-group">
-                    <label for="destino-viagem-detalhada">Cidade de Destino (Previsão 5 Dias):</label>
-                    <input type="text" id="destino-viagem-detalhada" placeholder="Digite a cidade para a previsão detalhada">
-                </div>
-                <button id="verificar-clima-detalhado-btn" class="btn-primary">Ver Previsão Detalhada</button>
-
-                <div class="forecast-controls-container">
-                    <div class="forecast-day-filters">
-                        <h4>Mostrar Previsão Para:</h4>
-                        <button class="btn-day-filter active" data-days="5" title="Mostrar previsão para 5 dias">5 Dias</button>
-                        <button class="btn-day-filter" data-days="3" title="Mostrar previsão para 3 dias">3 Dias</button>
-                        <button class="btn-day-filter" data-days="1" title="Mostrar previsão para hoje">Hoje</button>
-                    </div>
-
-                    <div class="forecast-highlights-controls">
-                        <h4>Destaques:</h4>
-                        <label><input type="checkbox" id="highlight-rain"> Destacar Chuva</label>
-                        <label><input type="checkbox" id="highlight-cold" data-temp-threshold="10"> Frio (Abaixo 10°C)</label>
-                        <label><input type="checkbox" id="highlight-hot" data-temp-threshold="30"> Calor (Acima 30°C)</label>
-                    </div>
-                </div>
-
-                <div id="previsao-tempo-detalhada-resultado" class="weather-results-detailed">
-                    <p>Digite uma cidade e clique em "Ver Previsão Detalhada".</p>
-                </div>
-            </div>
-        </section>
-         
-         <section id="controles-gerais">
-             <h2>Controles Gerais</h2>
-             <button id="limparStorageBtn" class="btn-danger">Limpar Toda a Garagem (LocalStorage)</button>
-             <small class="danger-warning">Atenção: Ação irreversível, removerá TODOS os veículos e históricos salvos no seu navegador.</small>
-         </section>
-
-        <audio id="somAcelerar" src="sons/acelerar_carro.mp3" preload="auto"></audio>
-        <audio id="somFrear" src="sons/frear.mp3" preload="auto"></audio>
-        <audio id="somLigar" src="sons/ligar_motor.mp3" preload="auto"></audio>
-        <audio id="somDesligar" src="sons/desligar_motor.mp3" preload="auto"></audio>
     </div>
 
-    <!-- CORREÇÃO: Removido 'PastaJs/' dos caminhos abaixo -->
+
+    <!-- ====================================================== -->
+    <!-- =========      VISÃO DA GARAGEM (APP)        ========= -->
+    <!-- ====================================================== -->
+    <div id="garage-view" class="hidden">
+        <header class="app-header">
+            <h1 class="app-title">Sua Garagem</h1>
+            <div class="user-info">
+                <span>Bem-vindo, <strong id="userName">Usuário</strong>!</span>
+                <button id="logoutBtn" class="btn-danger">Sair</button>
+            </div>
+        </header>
+
+        <main class="container">
+            <div id="globalStatus" role="alert"></div>
+
+            <!-- TODO o conteúdo da sua garagem que já existia vai aqui -->
+            <section id="adicionar-veiculos">
+                <h2>Adicionar Novo Veículo</h2>
+                 <div class="adicionar-container">
+                    <div class="form-adicionar">
+                        <h3>Carro Esportivo</h3>
+                        <div class="form-group"><label for="modeloEsportivo">Modelo:</label><input type="text" id="modeloEsportivo" placeholder="Ex: Ferrari F8 Tributo" required></div>
+                        <div class="form-group"><label for="corEsportivo">Cor:</label><input type="text" id="corEsportivo" placeholder="Ex: Rosso Corsa" required></div>
+                        <button id="criarCarroEsportivoBtn" class="btn-primary">Adicionar Carro</button>
+                    </div>
+                    <div class="form-adicionar">
+                        <h3>Caminhão</h3>
+                        <div class="form-group"><label for="modeloCaminhao">Modelo:</label><input type="text" id="modeloCaminhao" placeholder="Ex: Scania R450" required></div>
+                        <div class="form-group"><label for="corCaminhao">Cor:</label><input type="text" id="corCaminhao" placeholder="Ex: Branco" required></div>
+                        <div class="form-group"><label for="capacidadeCaminhao">Capacidade (kg):</label><input type="number" id="capacidadeCaminhao" placeholder="Ex: 29000" min="0" value="10000" required></div>
+                        <button id="criarCaminhaoBtn" class="btn-primary">Adicionar Caminhão</button>
+                    </div>
+                </div>
+            </section>
+
+            <hr>
+
+            <section id="garagem-display">
+                <h2>Veículos na Garagem</h2>
+                <div id="listaCarros"></div>
+                <hr class="section-divider">
+                <div id="listaCaminhoes"></div>
+            </section>
+
+             <!-- ... COLE AQUI SUAS OUTRAS SEÇÕES COMO "AGENDAMENTOS", "DICAS DE MANUTENÇÃO", "PLANEJAR VIAGEM", etc. ... -->
+
+        </main>
+    </div>
+
+    <!-- Modais (Agendamento, etc.) continuam aqui fora das views principais -->
+    <div id="agendamentoModal" class="modal" aria-hidden="true">
+        <!-- ... conteúdo do seu modal de agendamento ... -->
+    </div>
+
+    <!-- Áudios -->
+    <audio id="somAcelerar" src="sons/acelerar_carro.mp3" preload="auto"></audio>
+    <audio id="somFrear" src="sons/frear.mp3" preload="auto"></audio>
+    <audio id="somLigar" src="sons/ligar_motor.mp3" preload="auto"></audio>
+    <audio id="somDesligar" src="sons/desligar_motor.mp3" preload="auto"></audio>
+
+    <!-- Scripts -->
     <script src="manutencao.js" defer></script>
     <script src="garagem.js" defer></script>
     <script src="script.js" defer></script>
 </body>
 </html>
-
-    <!-- Dentro do loop que gera o .veiculo-item em script.js, a seguinte estrutura será gerada -->
-<!-- Exemplo de como a nova seção de manutenção será inserida no card do veículo -->
-
-<div class="veiculo-item" id="veiculo-XYZ" data-tipo="CarroEsportivo">
-    <!-- ... (informações do veículo e botões de ação existentes) ... -->
-    
-    <!-- Seção de Histórico de Manutenção (LocalStorage - Frontend) -->
-    <div class="historico-manutencao">
-        <h4>Histórico de Manutenção (Local)</h4>
-        <ul><!-- ... (lista gerada pelo getHistoricoFormatado()) ... --></ul>
-    </div>
-
-    <!-- NOVA SEÇÃO PARA MANUTENÇÕES DO BANCO DE DADOS -->
-    <div class="manutencao-db-section">
-        <button class="btn-toggle-manutencao" onclick="toggleManutencoesDB('XYZ')">
-            Exibir/Ocultar Manutenções (DB)
-        </button>
-        <div class="manutencao-db-content" id="manutencoes-db-content-XYZ" style="display: none;">
-            <h4>Manutenções (Banco de Dados)</h4>
-            <div id="manutencoes-lista-XYZ" class="manutencao-lista-container">
-                <!-- A lista de manutenções será carregada aqui -->
-            </div>
-            
-            <form class="form-add-manutencao" id="form-manutencao-XYZ" onsubmit="adicionarManutencao(event, 'XYZ')">
-                <h5>Adicionar Nova Manutenção</h5>
-                <div class="form-group">
-                    <input type="text" name="descricaoServico" placeholder="Descrição do Serviço" required>
-                </div>
-                <div class="form-group">
-                    <input type="number" name="custo" placeholder="Custo (R$)" step="0.01" min="0" required>
-                </div>
-                 <div class="form-group">
-                    <input type="number" name="quilometragem" placeholder="Quilometragem" min="0">
-                </div>
-                <button type="submit" class="btn-primary btn-small">Salvar Manutenção</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-//a
