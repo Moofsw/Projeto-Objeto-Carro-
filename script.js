@@ -66,9 +66,14 @@ async function handleLogin(event) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Falha no login');
 
+        // SUCESSO: Salva o token e atualiza a UI
         localStorage.setItem('jwtToken', data.token);
         checkAuthState(); // Chave da transição: muda a UI para a garagem
+        // FEEDBACK DE SUCESSO RECOMENDADO
+        displayGlobalAlert('Login realizado com sucesso! Bem-vindo(a)!', 'success');
+
     } catch (error) {
+        // ERRO: Exibe a mensagem de erro do backend no formulário
         authStatus.textContent = `Erro: ${error.message}`;
         authStatus.classList.add('error');
     }
@@ -96,10 +101,12 @@ async function handleRegister(event) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Falha no registro');
 
+        // SUCESSO: Exibe mensagem de sucesso no formulário
         authStatus.textContent = 'Registro realizado com sucesso! Faça o login para continuar.';
         authStatus.classList.add('success');
         registerForm.reset();
     } catch (error) {
+        // ERRO: Exibe a mensagem de erro do backend no formulário
         authStatus.textContent = `Erro: ${error.message}`;
         authStatus.classList.add('error');
     }
@@ -228,6 +235,23 @@ async function fetchUserVehicles() {
 function renderizarGaragem() {
     // ESTA FUNÇÃO PERMANECE EXATAMENTE A MESMA. ELA É PERFEITA.
     // Ela já lê da instância `minhaGaragem`, que agora é populada pelo `fetchUserVehicles`.
+    // COMENTÁRIO: A lógica para exibir a lista de usuários compartilhados e o botão
+    // "Remover Acesso" seria adicionada aqui, dentro do loop forEach.
+    // Seria necessário que os dados do veículo vindos do backend (`/api/veiculos`)
+    // incluíssem um array `sharedWith` populado com os detalhes dos usuários.
+    /* Exemplo de como seria:
+    ...
+    let sharedWithHtml = '';
+    if (v.isOwner && v.sharedWith && v.sharedWith.length > 0) {
+        sharedWithHtml = '<h5>Compartilhado com:</h5><ul>';
+        v.sharedWith.forEach(user => {
+            sharedWithHtml += `<li>${user.email} <button onclick="handleUnshare('${v.id}', '${user._id}')">X</button></li>`;
+        });
+        sharedWithHtml += '</ul>';
+    }
+    const veiculoCardHtml = `... inclua a variável ${sharedWithHtml} no local desejado ...`;
+    ...
+    */
     if (!containerCarro || !containerCaminhao) return;
     let carrosHtml = '', caminhoesHtml = '', carrosCount = 0, caminhoesCount = 0;
     const veiculos = minhaGaragem.listarTodosVeiculos();
@@ -316,6 +340,40 @@ async function removerVeiculoDaGaragem(idVeiculo) {
         displayGlobalAlert(`Erro: ${error.message}`, 'error');
     }
 }
+
+/**
+ * [DESAFIO] Manipula a remoção de um compartilhamento de veículo.
+ * @param {string} veiculoId - O ID do veículo.
+ * @param {string} userIdToRemove - O ID do usuário a ser removido.
+ */
+async function handleUnshare(veiculoId, userIdToRemove) {
+    if (!confirm('Tem certeza que deseja remover o acesso deste usuário?')) return;
+
+    const token = localStorage.getItem('jwtToken');
+
+    try {
+        const response = await fetch(`${backendUrl}/api/veiculos/${veiculoId}/unshare`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ userIdToRemove })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Falha ao remover compartilhamento.');
+
+        // FEEDBACK DE SUCESSO
+        displayGlobalAlert('Acesso removido com sucesso!', 'success');
+        fetchUserVehicles(); // Recarrega a garagem para atualizar a lista de compartilhamento
+
+    } catch (error) {
+        // FEEDBACK DE ERRO
+        displayGlobalAlert(`Erro: ${error.message}`, 'error');
+    }
+}
+
 
 // SUAS FUNÇÕES ORIGINAIS (INTERAÇÃO, DICAS, CLIMA, ETC.) CONTINUAM AQUI INALTERADAS
 function executarAcaoVeiculo(idVeiculo, acao, param = null) {
