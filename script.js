@@ -439,3 +439,215 @@ document.addEventListener('DOMContentLoaded', () => {
     // Verificação inicial para decidir qual tela mostrar
     checkAuthState();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    // === VARIÁVEIS E ESTADO ===
+    const backendUrl = 'http://localhost:5000'; // URL do seu backend
+
+    // Views
+    const authView = document.getElementById('auth-view');
+    const appView = document.getElementById('app-view');
+
+    // Forms
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const newPostForm = document.getElementById('newPostForm');
+
+    // Containers e Botões
+    const postsContainer = document.getElementById('posts-container');
+    const userNameSpan = document.getElementById('userName');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Status
+    const loginStatus = document.getElementById('login-status');
+    const registerStatus = document.getElementById('register-status');
+    const postStatus = document.getElementById('post-status');
+
+    let currentUser = null;
+
+    // === FUNÇÕES DE LÓGICA ===
+
+    // Exibe mensagem de status
+    function showStatusMessage(element, message, type) {
+        element.textContent = message;
+        element.className = `status-message ${type}`;
+    }
+
+    // Decodifica o token para obter os dados do usuário
+    function decodeToken(token) {
+        try {
+            return JSON.parse(atob(token.split('.')[1]));
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Verifica o estado de autenticação e atualiza a UI
+    function checkAuthState() {
+        const token = localStorage.getItem('jwtToken');
+        if (token) {
+            currentUser = decodeToken(token);
+            if (currentUser) {
+                authView.classList.add('hidden');
+                appView.classList.remove('hidden');
+                userNameSpan.textContent = currentUser.nome;
+                fetchPosts();
+            } else {
+                logout(); // Token inválido
+            }
+        } else {
+            authView.classList.remove('hidden');
+            appView.classList.add('hidden');
+            currentUser = null;
+        }
+    }
+
+    // Busca e renderiza os posts
+    async function fetchPosts() {
+        try {
+            const response = await fetch(`${backendUrl}/api/posts`);
+            const posts = await response.json();
+
+            postsContainer.innerHTML = ''; // Limpa antes de renderizar
+            if (posts.length === 0) {
+                postsContainer.innerHTML = '<p>Nenhum post ainda. Seja o primeiro a publicar!</p>';
+                return;
+            }
+
+            posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post-card';
+                
+                const deleteBtnHtml = (currentUser && currentUser.userId === post.owner) 
+                    ? `<button class="delete-btn" data-post-id="${post._id}">Deletar</button>` 
+                    : '';
+
+                postElement.innerHTML = `
+                    ${deleteBtnHtml}
+                    <h3>${post.titulo}</h3>
+                    <div class="post-meta">
+                        <span>Por: ${post.autor}</span> | 
+                        <span>Em: ${new Date(post.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p>${post.conteudo}</p>
+                `;
+                postsContainer.appendChild(postElement);
+            });
+
+        } catch (error) {
+            postsContainer.innerHTML = '<p style="color: red;">Erro ao carregar posts.</p>';
+        }
+    }
+    
+    // === MANIPULADORES DE EVENTO ===
+
+    // Login
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+            const response = await fetch(`${backendUrl}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+
+            showStatusMessage(loginStatus, 'Login bem-sucedido!', 'success');
+            localStorage.setItem('jwtToken', data.token);
+            setTimeout(checkAuthState, 1000);
+
+        } catch (error) {
+            showStatusMessage(loginStatus, `Erro: ${error.message}`, 'error');
+        }
+    });
+
+    // Registro
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nome = document.getElementById('registerName').value;
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+
+        try {
+            const response = await fetch(`${backendUrl}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome, email, password })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+
+            showStatusMessage(registerStatus, 'Registro bem-sucedido! Faça o login.', 'success');
+            registerForm.reset();
+
+        } catch (error) {
+            showStatusMessage(registerStatus, `Erro: ${error.message}`, 'error');
+        }
+    });
+
+    // Logout
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('jwtToken');
+        checkAuthState();
+    });
+
+    // Criar novo post
+    newPostForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const titulo = document.getElementById('postTitle').value;
+        const conteudo = document.getElementById('postContent').value;
+        const token = localStorage.getItem('jwtToken');
+
+        try {
+            const response = await fetch(`${backendUrl}/api/posts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ titulo, conteudo })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+
+            showStatusMessage(postStatus, 'Post criado com sucesso!', 'success');
+            newPostForm.reset();
+            fetchPosts(); // Atualiza a lista
+            setTimeout(() => postStatus.className = 'status-message', 3000);
+
+        } catch (error) {
+            showStatusMessage(postStatus, `Erro: ${error.message}`, 'error');
+        }
+    });
+    
+    // Deletar post (usando delegação de evento)
+    postsContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+            const postId = e.target.dataset.postId;
+            if (!confirm('Tem certeza que deseja deletar este post?')) return;
+            
+            const token = localStorage.getItem('jwtToken');
+            try {
+                const response = await fetch(`${backendUrl}/api/posts/${postId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+
+                alert('Post deletado com sucesso!');
+                fetchPosts(); // Atualiza a lista
+
+            } catch (error) {
+                alert(`Erro ao deletar post: ${error.message}`);
+            }
+        }
+    });
+
+    // --- INICIALIZAÇÃO ---
+    checkAuthState();
+});

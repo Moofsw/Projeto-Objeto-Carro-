@@ -155,3 +155,34 @@ app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
   console.log(`Acesse em http://localhost:${PORT}`);
 });
+
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+
+// Importação das rotas
+const authRoutes = require('./routes/auth');
+const postRoutes = require('./routes/posts');
+
+// Middlewares
+app.use(cors());
+app.use(express.json());
+
+// Conexão com o MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Conectado ao MongoDB com sucesso!'))
+  .catch(err => console.error('Falha ao conectar com o MongoDB:', err));
+
+// Definição das Rotas da API
+app.use('/api/auth', authRoutes);
+app.use('/api/posts', postRoutes);
+
+// Rota raiz para teste
+app.get('/', (req, res) => {
+  res.send('API do Projeto Integrador está no ar!');
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor backend rodando na porta ${PORT}`);
+});

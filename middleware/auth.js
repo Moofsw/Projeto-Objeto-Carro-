@@ -1,47 +1,68 @@
+const express = require('express');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-require('dotenv').config(); // Carrega as variáveis de ambiente
+const User = require('../models/User');
 
-// Define o segredo do JWT, buscando do .env ou usando um padrão
-const JWT_SECRET = process.env.JWT_SECRET || 'Secret';
+const router = express.Router();
 
-/**
- * Middleware para autenticação via JSON Web Token.
- * Verifica a presença e a validade de um token no cabeçalho 'Authorization'.
- * Se o token for válido, anexa o ID do usuário ao objeto `req`.
- */
-const authMiddleware = (req, res, next) => {
-    // 1. Extrai o token do cabeçalho da requisição
-    const authHeader = req.header('Authorization');
-
-    // 2. Se não houver cabeçalho de autorização, retorna erro 401
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Acesso negado. Nenhum token fornecido.' });
-    }
-
-    // O cabeçalho deve estar no formato "Bearer <token>"
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
-        return res.status(401).json({ error: 'Formato de token inválido. Use: Bearer <token>.' });
-    }
-
-    const token = parts[1];
-
+// Rota: POST /api/auth/register
+router.post('/register', async (req, res) => {
     try {
-        // 3. Verifica o token usando jwt.verify()
-        // Se o token for inválido (expirado, assinatura incorreta), um erro será lançado
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const { nome, email, password } = req.body;
+        if (!nome || !email || !password) {
+            return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+        }
 
-        // 4. Se for válido, anexa o userId do token ao objeto req
-        req.userId = decoded.userId;
+        const userExists = await User.findOne({ email });
+        if (userExists) {
+            return res.status(400).json({ error: 'Este e-mail já está em uso.' });
+        }
 
-        // 5. Chama next() para passar para a próxima função na rota
-        next();
-        
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const user = await User.create({
+            nome,
+            email,
+            password: hashedPassword,
+        });
+
+        res.status(201).json({ message: 'Usuário registrado com sucesso!', userId: user._id });
+
     } catch (error) {
-        // Captura o erro se a verificação falhar
-        console.error("[Auth Middleware] Erro de verificação do token:", error.message);
-        res.status(401).json({ error: 'Token inválido ou expirado.' });
+        res.status(500).json({ error: 'Erro no servidor ao registrar usuário.' });
     }
-};
+});
 
-module.exports = authMiddleware;
+// Rota: POST /api/auth/login
+router.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ error: 'E-mail ou senha incorretos.' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'E-mail ou senha incorretos.' });
+        }
+
+        const payload = {
+            userId: user._id,
+            nome: user.nome,
+            email: user.email
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, {
+            expiresIn: '1d', // Token expira em 1 dia
+        });
+
+        res.json({ token });
+
+    } catch (error) {
+        res.status(500).json({ error: 'Erro no servidor ao fazer login.' });
+    }
+});
+
+module.exports = router;
