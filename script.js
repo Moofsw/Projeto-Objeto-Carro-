@@ -376,27 +376,74 @@ async function handleUnshare(veiculoId, userIdToRemove) {
 
 
 // SUAS FUNÇÕES ORIGINAIS (INTERAÇÃO, DICAS, CLIMA, ETC.) CONTINUAM AQUI INALTERADAS
-function executarAcaoVeiculo(idVeiculo, acao, param = null) {
-    // ESTA FUNÇÃO NÃO PRECISA MUDAR. As ações de ligar, acelerar, etc., são de estado
-    // temporário e podem continuar manipulando o objeto no frontend. Apenas
-    // renderizarGaragem() é chamado no final para atualizar a UI, o que é perfeito.
-    const veiculo = minhaGaragem.encontrarVeiculoPorId(idVeiculo);
-    if (!veiculo || typeof veiculo[acao] !== 'function') return;
-    if (param === null) {
-        if (acao === 'acelerar') param = veiculo instanceof Caminhao ? 5 : 15;
-        if (acao === 'frear') param = veiculo instanceof Caminhao ? 3 : 10;
-    }
-    const msg = veiculo[acao](param);
-    let statusType = 'info';
-    if (msg.toLowerCase().includes('ligado')) statusType = 'success';
-    if (msg.toLowerCase().includes('desligado')) statusType = 'warning';
-    if (msg.toLowerCase().includes('turbo ativado')) statusType = 'turbo';
-    updateVehicleStatusUI(idVeiculo, msg, statusType);
-    playSound(`som${acao.charAt(0).toUpperCase() + acao.slice(1).replace('arTurbo', 'Acelerar').replace('ivarTurbo','')}`);
-    // A linha minhaGaragem.salvar() não é mais necessária para persistência principal,
-    // mas pode ser mantida se você quiser salvar o estado (velocidade, ligado) no localStorage.
-    // minhaGaragem.salvar(); 
-    renderizarGaragem();
+function renderizarGaragem() {
+    if (!containerCarro || !containerCaminhao) return;
+    
+    let carrosHtml = '', caminhoesHtml = '';
+    let carrosCount = 0, caminhoesCount = 0;
+    
+    const veiculos = minhaGaragem.listarTodosVeiculos();
+    
+    veiculos.forEach(v => {
+        const isCarroEsportivo = v instanceof CarroEsportivo;
+        const isCaminhao = v instanceof Caminhao;
+        
+        // Define imagem
+        let imagePath = isCarroEsportivo ? 'Imagens/carro-imagem.webp' : (isCaminhao ? 'Imagens/pngtree-red-truck-transport-png-image_11506094.png' : 'Imagens/default-vehicle.png');
+
+        // --- LÓGICA VISUAL DO COMPARTILHAMENTO ---
+        let badgeHtml = '';
+        let extraClass = '';
+        let btnShareHtml = '';
+        let btnDeleteHtml = '';
+
+        if (v.isSharedWithMe) {
+            // É compartilhado COMIGO
+            const nomeDono = v.ownerDetails ? v.ownerDetails.nome : 'Outro usuário';
+            badgeHtml = `<span class="shared-badge" title="Pertence a ${v.ownerDetails?.email}">Compartilhado por ${nomeDono}</span>`;
+            extraClass = 'is-shared-with-me'; 
+            // Não mostramos botão de deletar nem compartilhar nos carros dos outros
+        } else {
+            // É MEU carro
+            badgeHtml = `<span class="owner-badge">Meu Veículo</span>`;
+            // Posso compartilhar e deletar
+            btnShareHtml = `<button class="btn-share" onclick="compartilharVeiculo('${v.id}')">Compartilhar</button>`;
+            btnDeleteHtml = `<button class="btn-remover" onclick="removerVeiculoDaGaragem('${v.id}')">Remover</button>`;
+        }
+
+        // --- HTML DO CARD ---
+        const veiculoCardHtml = `
+            <div class="veiculo-item ${extraClass}" id="veiculo-${v.id}">
+                <img src="${imagePath}" alt="Imagem de ${v.modelo}">
+                <div class="veiculo-info">
+                    <p><strong>${v.modelo} (${v.cor})</strong> ${badgeHtml}</p>
+                    <p><span class="detail-label">Status:</span> ${v.ligado ? 'Ligado' : 'Desligado'}</p>
+                    <p><span class="detail-label">Velocidade:</span> ${v.velocidade.toFixed(1)} km/h</p>
+                    ${isCarroEsportivo ? `<p>Turbo: ${v.turboAtivado ? 'ON' : 'OFF'}</p>` : ''}
+                    ${isCaminhao ? `<p>Carga: ${v.cargaAtual}/${v.capacidadeCarga}</p>` : ''}
+                </div>
+                <p id="status-${v.id}" class="status-veiculo"></p>
+                
+                <div class="button-group-veiculo">
+                    <button onclick="executarAcaoVeiculo('${v.id}', 'ligar')" ${v.ligado ? 'disabled' : ''}>Ligar</button>
+                    <button onclick="executarAcaoVeiculo('${v.id}', 'desligar')" ${!v.ligado || v.velocidade > 0 ? 'disabled' : ''}>Desligar</button>
+                    <button onclick="executarAcaoVeiculo('${v.id}', 'acelerar')" ${!v.ligado ? 'disabled' : ''}>Acelerar</button>
+                    <button onclick="executarAcaoVeiculo('${v.id}', 'frear')" ${!v.ligado || v.velocidade <= 0 ? 'disabled' : ''}>Frear</button>
+                    
+                    ${isCarroEsportivo ? `<button onclick="executarAcaoVeiculo('${v.id}', 'ativarTurbo')">Turbo</button>` : ''}
+                    ${isCaminhao ? `<button onclick="executarAcaoVeiculo('${v.id}', 'carregar', 500)">Carregar</button>` : ''}
+                    
+                    ${btnShareHtml} <!-- Só aparece se for meu -->
+                    ${btnDeleteHtml} <!-- Só aparece se for meu -->
+                </div>
+            </div>`;
+
+        if (isCarroEsportivo) { carrosHtml += veiculoCardHtml; carrosCount++; }
+        else if (isCaminhao) { caminhoesHtml += veiculoCardHtml; caminhoesCount++; }
+    });
+
+    containerCarro.innerHTML = `<h3>Carros (${carrosCount})</h3>` + carrosHtml;
+    containerCaminhao.innerHTML = `<h3>Caminhões (${caminhoesCount})</h3>` + caminhoesHtml;
 }
 async function buscarDicasGerais() { /* ... SEU CÓDIGO ORIGINAL ... */ }
 async function buscarDicasPorTipo() { /* ... SEU CÓDIGO ORIGINAL ... */ }
@@ -651,3 +698,288 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZAÇÃO ---
     checkAuthState();
 });
+
+// Variável global para saber quem está logado
+let currentUserId = null; 
+
+function checkAuthState() {
+    const token = localStorage.getItem('jwtToken');
+
+    if (token) {
+        // --- USUÁRIO LOGADO ---
+        try {
+            // Decodifica o token JWT (a parte do meio)
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            
+            // Salva o ID do usuário globalmente para usar depois
+            currentUserId = payload.userId; 
+            
+            if(userNameSpan) userNameSpan.textContent = payload.nome || payload.email || 'Usuário';
+            
+            authView.classList.add('hidden');
+            garageView.classList.remove('hidden');
+
+            fetchUserVehicles(); // Busca os carros no banco
+        } catch (e) {
+            console.error("Token inválido:", e);
+            logout();
+        }
+    } else {
+        // --- USUÁRIO DESLOGADO ---
+        currentUserId = null;
+        authView.classList.remove('hidden');
+        garageView.classList.add('hidden');
+        
+        // Limpa a interface
+        if (containerCarro) containerCarro.innerHTML = '';
+        if (containerCaminhao) containerCaminhao.innerHTML = '';
+    }
+}
+
+class Vehicle {
+    constructor(modelo, cor, id = null) {
+        this.id = id || `veh_${Date.now()}`;
+        this.modelo = modelo;
+        this.cor = cor;
+        this.ligado = false;
+        this.velocidade = 0;
+        this.historicoManutencao = [];
+        this._tipoVeiculo = "Veiculo";
+        
+        // NOVOS CAMPOS
+        this.ownerDetails = null; // Guardar {id, nome, email} do dono
+        this.isSharedWithMe = false; // Flag para saber se é compartilhado
+    }
+
+    // ... (Mantenha seus métodos ligar, desligar, acelerar iguais) ...
+    ligar() { if (this.ligado) return "Já ligado"; this.ligado = true; return "Ligado"; }
+    desligar() { if (this.velocidade > 0) return "Pare o carro primeiro"; this.ligado = false; return "Desligado"; }
+    acelerar(val) { if(!this.ligado) return "Ligue primeiro"; this.velocidade += val; return `Velocidade: ${this.velocidade}`; }
+    frear(val) { this.velocidade = Math.max(0, this.velocidade - val); return `Velocidade: ${this.velocidade}`; }
+    getHistoricoFormatado() { return this.historicoManutencao.map(m => `<li>${m.formatar()}</li>`).join(''); }
+    
+    // MÉTODO FROMJSON ATUALIZADO
+    static fromJSON(data) {
+        if (!data) return null;
+        let vehicle = null;
+        
+        // Identifica o tipo vindo do backend
+        const tipo = data._tipoVeiculo || data.tipo; // O backend pode mandar 'tipo', o front usa '_tipoVeiculo'
+        
+        switch (tipo) {
+            case 'CarroEsportivo': 
+                vehicle = new CarroEsportivo(data.modelo, data.cor, data._id || data.id); 
+                if (data.turboAtivado) vehicle.turboAtivado = true;
+                break;
+            case 'Caminhao': 
+                vehicle = new Caminhao(data.modelo, data.cor, data.capacidadeCarga, data._id || data.id); 
+                if (data.cargaAtual) vehicle.cargaAtual = data.cargaAtual;
+                break;
+            default: 
+                vehicle = new Vehicle(data.modelo, data.cor, data._id || data.id);
+        }
+
+        // Restaura estados básicos
+        vehicle.ligado = data.ligado || false;
+        vehicle.velocidade = data.velocidade || 0;
+        
+        // --- LÓGICA DE PROPRIEDADE ---
+        // O backend manda 'owner' populado (objeto) ou só ID
+        if (data.owner) {
+            vehicle.ownerDetails = data.owner; // Salva o objeto { _id, nome, email }
+            
+            // Se o ID do dono for diferente do meu ID atual, é compartilhado!
+            if (currentUserId && vehicle.ownerDetails._id !== currentUserId) {
+                vehicle.isSharedWithMe = true;
+            }
+        }
+
+        return vehicle;
+    }
+}
+
+async function compartilharVeiculo(veiculoId) {
+    const emailDestino = prompt("Com quem você quer compartilhar este veículo? Digite o e-mail:");
+    
+    if (!emailDestino) return; // Cancelou
+
+    const token = localStorage.getItem('jwtToken');
+    
+    try {
+        const response = await fetch(`${backendUrl}/api/veiculos/${veiculoId}/share`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ email: emailDestino })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error || 'Erro ao compartilhar');
+
+        displayGlobalAlert(data.message, 'success');
+        
+    } catch (error) {
+        displayGlobalAlert(`Erro: ${error.message}`, 'error');
+    }
+}
+
+// ======================================================
+// =========      CRIAÇÃO COM UPLOAD (FormData) =========
+// ======================================================
+
+async function criarNovoVeiculo(tipo) {
+    const token = localStorage.getItem('jwtToken');
+    const prefix = tipo === 'CarroEsportivo' ? 'Esportivo' : 'Caminhao';
+    
+    // Elementos do DOM
+    const modeloInput = document.getElementById(`modelo${prefix}`);
+    const corInput = document.getElementById(`cor${prefix}`);
+    const imagemInput = document.getElementById(`imagem${prefix}`); // Novo input
+    
+    const modelo = modeloInput.value;
+    const cor = corInput.value;
+
+    if (!modelo || !cor) { 
+        displayGlobalAlert("Modelo e cor são obrigatórios.", "warning"); 
+        return; 
+    }
+
+    // --- MUDANÇA PRINCIPAL: Usar FormData em vez de JSON ---
+    const formData = new FormData();
+    formData.append('modelo', modelo);
+    formData.append('cor', cor);
+    formData.append('_tipoVeiculo', tipo); // O backend espera isso para decidir se é Carro ou Caminhão
+
+    if (tipo === 'Caminhao') {
+        const capacidade = document.getElementById('capacidadeCaminhao').value;
+        formData.append('capacidadeCarga', capacidade);
+    }
+
+    // Anexar o arquivo se ele foi selecionado
+    if (imagemInput.files[0]) {
+        formData.append('imagem', imagemInput.files[0]);
+    }
+
+    try {
+        const response = await fetch(`${backendUrl}/api/veiculos`, {
+            method: 'POST',
+            headers: { 
+                // NÃO defina 'Content-Type': 'application/json' aqui!
+                // O navegador define automaticamente o multipart/form-data com o boundary correto.
+                'Authorization': `Bearer ${token}` 
+            },
+            body: formData // Envia o objeto FormData
+        });
+
+        const veiculoCriado = await response.json();
+        
+        if (!response.ok) throw new Error(veiculoCriado.error || "Erro ao criar veículo");
+
+        displayGlobalAlert(`${modelo} adicionado com sucesso!`, 'success');
+        fetchUserVehicles(); // Recarrega a garagem
+
+        // Limpar formulário
+        modeloInput.value = '';
+        corInput.value = '';
+        imagemInput.value = ''; // Limpa o input file
+
+    } catch(error) {
+        displayGlobalAlert(`Erro: ${error.message}`, 'error');
+    }
+}
+
+// ======================================================
+// =========      RENDERIZAÇÃO COM IMAGEM       =========
+// ======================================================
+
+function renderizarGaragem() {
+    if (!containerCarro || !containerCaminhao) return;
+    
+    let carrosHtml = '', caminhoesHtml = '';
+    let carrosCount = 0, caminhoesCount = 0;
+    
+    const veiculos = minhaGaragem.listarTodosVeiculos();
+    
+    veiculos.forEach(v => {
+        const isCarroEsportivo = v instanceof CarroEsportivo;
+        const isCaminhao = v instanceof Caminhao;
+        
+        // Lógica da Imagem:
+        // 1. Tenta usar a imagem vinda do banco (upload)
+        // 2. Se não tiver, usa a imagem padrão baseada no tipo
+        let imagePath;
+        
+        if (v.imageUrl) {
+            // O backend retorna algo como "uploads/1234-arquivo.jpg"
+            // Precisamos concatenar com a URL do backend
+            imagePath = `${backendUrl}/${v.imageUrl}`;
+        } else {
+            // Fallback para imagens estáticas locais
+            imagePath = isCarroEsportivo ? 'Imagens/carro-imagem.webp' : 'Imagens/pngtree-red-truck-transport-png-image_11506094.png';
+        }
+
+        // Se o objeto Veiculo não tiver o campo imageUrl (porque foi instanciado da classe antiga no front),
+        // precisamos garantir que o fromJSON pegou esse dado. 
+        // Certifique-se que o método Vehicle.fromJSON mapeia data.imageUrl para this.imageUrl.
+        
+        // ... (código dos badges e botões igual ao anterior) ...
+        let sharedBadgeHtml = v.isSharedWithMe ? `<span class="shared-badge">Compartilhado</span>` : `<span class="owner-badge">Meu Veículo</span>`;
+        let shareBtn = v.isSharedWithMe ? '' : `<button class="btn-share" onclick="compartilharVeiculo('${v.id}')">Compartilhar</button>`;
+        let deleteBtn = v.isSharedWithMe ? '' : `<button class="btn-remover" onclick="removerVeiculoDaGaragem('${v.id}')">Remover</button>`;
+
+        const veiculoCardHtml = `
+            <div class="veiculo-item" id="veiculo-${v.id}">
+                <!-- AQUI A MÁGICA ACONTECE: Exibe a imagem -->
+                <img src="${imagePath}" alt="Imagem de ${v.modelo}" 
+                     style="width: 200px; height: 150px; object-fit: cover; border-radius: 8px;">
+                
+                <div class="veiculo-info">
+                    <p><strong>${v.modelo} (${v.cor})</strong> ${sharedBadgeHtml}</p>
+                    <p><span class="detail-label">Status:</span> ${v.ligado ? 'Ligado' : 'Desligado'}</p>
+                    <p><span class="detail-label">Velocidade:</span> ${v.velocidade.toFixed(1)} km/h</p>
+                    ${isCarroEsportivo ? `<p>Turbo: ${v.turboAtivado ? 'ON' : 'OFF'}</p>` : ''}
+                    ${isCaminhao ? `<p>Carga: ${v.cargaAtual}/${v.capacidadeCarga}</p>` : ''}
+                </div>
+                <p id="status-${v.id}" class="status-veiculo"></p>
+                <div class="button-group-veiculo">
+                    <button onclick="executarAcaoVeiculo('${v.id}', 'ligar')" ${v.ligado ? 'disabled' : ''}>Ligar</button>
+                    <button onclick="executarAcaoVeiculo('${v.id}', 'desligar')" ${!v.ligado || v.velocidade > 0 ? 'disabled' : ''}>Desligar</button>
+                    <button onclick="executarAcaoVeiculo('${v.id}', 'acelerar')" ${!v.ligado ? 'disabled' : ''}>Acelerar</button>
+                    <button onclick="executarAcaoVeiculo('${v.id}', 'frear')" ${!v.ligado || v.velocidade <= 0 ? 'disabled' : ''}>Frear</button>
+                    ${isCarroEsportivo ? `<button onclick="executarAcaoVeiculo('${v.id}', 'ativarTurbo')">Turbo</button>` : ''}
+                    ${isCaminhao ? `<button onclick="executarAcaoVeiculo('${v.id}', 'carregar', 500)">Carregar</button>` : ''}
+                    ${shareBtn}
+                    <button onclick="mostrarFormAgendamento('${v.id}')">Histórico</button>
+                    ${deleteBtn}
+                </div>
+            </div>`;
+
+        if (isCarroEsportivo) { carrosHtml += veiculoCardHtml; carrosCount++; }
+        else if (isCaminhao) { caminhoesHtml += veiculoCardHtml; caminhoesCount++; }
+    });
+
+    containerCarro.innerHTML = `<h3>Carros (${carrosCount})</h3>` + carrosHtml;
+    containerCaminhao.innerHTML = `<h3>Caminhões (${caminhoesCount})</h3>` + caminhoesHtml;
+}
+
+class Vehicle {
+    constructor(modelo, cor, id = null) {
+        // ... (outros campos)
+        this.imageUrl = null; // Novo campo na classe
+    }
+
+    static fromJSON(data) {
+        // ... (instanciação do objeto vehicle)
+        // ...
+        
+        // Mapear a imagem vinda do banco
+        if (data.imageUrl) {
+            vehicle.imageUrl = data.imageUrl;
+        }
+        
+        return vehicle;
+    }
+}

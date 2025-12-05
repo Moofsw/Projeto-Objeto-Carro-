@@ -126,3 +126,49 @@
     <script src="script.js" defer></script>
 </body>
 </html>
+
+<!-- Dentro da section #adicionar-veiculos -->
+<div class="adicionar-container">
+    
+    <!-- Formulário Carro Esportivo -->
+    <div class="form-adicionar">
+        <h3>Carro Esportivo</h3>
+        <div class="form-group">
+            <label for="modeloEsportivo">Modelo:</label>
+            <input type="text" id="modeloEsportivo" placeholder="Ex: Ferrari F8" required>
+        </div>
+        <div class="form-group">
+            <label for="corEsportivo">Cor:</label>
+            <input type="text" id="corEsportivo" placeholder="Ex: Vermelho" required>
+        </div>
+        <!-- NOVO CAMPO DE IMAGEM -->
+        <div class="form-group">
+            <label for="imagemEsportivo">Foto do Veículo:</label>
+            <input type="file" id="imagemEsportivo" accept="image/*">
+        </div>
+        <button id="criarCarroEsportivoBtn" class="btn-primary">Adicionar Carro</button>
+    </div>
+
+    <!-- Formulário Caminhão -->
+    <div class="form-adicionar">
+        <h3>Caminhão</h3>
+        <div class="form-group">
+            <label for="modeloCaminhao">Modelo:</label>
+            <input type="text" id="modeloCaminhao" placeholder="Ex: Scania R450" required>
+        </div>
+        <div class="form-group">
+            <label for="corCaminhao">Cor:</label>
+            <input type="text" id="corCaminhao" placeholder="Ex: Branco" required>
+        </div>
+        <div class="form-group">
+            <label for="capacidadeCaminhao">Capacidade (kg):</label>
+            <input type="number" id="capacidadeCaminhao" value="10000" required>
+        </div>
+        <!-- NOVO CAMPO DE IMAGEM -->
+        <div class="form-group">
+            <label for="imagemCaminhao">Foto do Veículo:</label>
+            <input type="file" id="imagemCaminhao" accept="image/*">
+        </div>
+        <button id="criarCaminhaoBtn" class="btn-primary">Adicionar Caminhão</button>
+    </div>
+</div>

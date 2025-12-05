@@ -1003,3 +1003,43 @@ textarea { width: 100%; min-height: 120px; padding: 10px; box-sizing: border-box
 .status-message { padding: 10px; margin-bottom: 10px; border-radius: 4px; text-align: center; display: none; }
 .status-message.success { display: block; background-color: #d4edda; color: #155724; }
 .status-message.error { display: block; background-color: #f8d7da; color: #721c24; }
+
+/* --- Badges de Propriedade --- */
+.shared-badge {
+    display: inline-block;
+    background-color: #6f42c1; /* Roxo */
+    color: white;
+    font-size: 0.75em;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.owner-badge {
+    display: inline-block;
+    background-color: #28a745; /* Verde */
+    color: white;
+    font-size: 0.75em;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* Botão de Compartilhar */
+.btn-share {
+    background-color: #ffc107; /* Amarelo */
+    color: #212529;
+}
+.btn-share:hover:not(:disabled) {
+    background-color: #e0a800;
+}
+
+/* Esconde botões de ação crítica se o carro for compartilhado comigo */
+.veiculo-item.is-shared-with-me .btn-remover,
+.veiculo-item.is-shared-with-me .btn-share {
+    display: none !important;
+}
